@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vibecheck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f5f6f4;--panel:#ffffff;--sunk:#eef1ee;--ink:#18201d;--muted:#5f6d68;--faint:#8a9792;--line:#e0e5e2;
+  --accent:#1d6b58;--accent-soft:#e2efea;--warn:#95590a;--warn-soft:#fbf0dc;--bad:#a1352d;--bad-soft:#f8e4e1;
+  --hit:#c99a00;--hit-soft:#ffe98a;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;--sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111614;--panel:#171e1b;--sunk:#141a17;--ink:#e1e9e5;--muted:#96a6a0;--faint:#6c7b75;--line:#27302c;
+  --accent:#6cc3aa;--accent-soft:#1b2d27;--warn:#eeb25a;--warn-soft:#30250f;--bad:#ee8a82;--bad-soft:#381c19;--hit:#ffd400;--hit-soft:#5a4a00;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans)}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:var(--mono);font-size:12.5px;background:var(--sunk);padding:0 4px;border-radius:4px}
+
+header.top{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.top-in{max-width:1100px;margin:0 auto;padding:10px 20px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.brand{font-family:var(--mono);font-weight:600;font-size:15px}
+.brand small{font-weight:400;color:var(--muted);margin-left:6px}
+.counts{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{font-family:var(--mono);font-size:12px;padding:1px 8px;border-radius:999px;font-weight:600}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.ok{background:var(--accent-soft);color:var(--accent)}
+.playf{flex:1 1 360px;display:flex;gap:6px;min-width:0}
+.playf input{flex:1;min-width:0;font:13px var(--mono);padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.playf.bad input{border-color:var(--bad)}
+.live{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-left:auto}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.live.err .dot{background:var(--bad)}
+.errbox{max-width:1100px;margin:10px auto 0;padding:0 20px}
+.errbox pre{margin:0;background:var(--bad-soft);color:var(--bad);padding:10px 12px;border-radius:8px;font:12px var(--mono);white-space:pre-wrap}
+
+.page{max-width:1100px;margin:0 auto;padding:18px 20px 60px;display:grid;gap:26px}
+h2.group-h{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);margin:0 0 8px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+h2.group-h .why{font-family:var(--sans);font-weight:400;color:var(--muted);font-size:13px}
+.stack{display:grid;gap:8px}
+.sec-h{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:6px}
+.hint{color:var(--faint);font-size:13px;margin:0}
+.sym{background:none;border:0;padding:0;cursor:pointer;font-family:var(--mono);font-size:13px;text-align:left;overflow-wrap:anywhere}
+.sym:hover{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.sym.k-class{color:var(--accent);font-weight:600}
+.chip{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:5px;background:var(--accent-soft);border:0;cursor:pointer}
+.chip:hover{outline:1px solid var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* the score card */
+.scorecard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 24px;align-items:center}
+.overall{display:grid;justify-items:center;gap:2px;min-width:120px}
+.overall b{font:600 56px/1 var(--mono);font-variant-numeric:tabular-nums}
+.overall .of{font-size:12px;color:var(--faint)}
+svg.hex{width:100%;max-width:340px;height:auto;display:block;justify-self:center}
+svg.hex .grid{fill:none;stroke:var(--line)}
+svg.hex .axis{stroke:var(--line)}
+svg.hex .now{fill:var(--accent);fill-opacity:.18;stroke:var(--accent);stroke-width:2;transition:d .6s}
+svg.hex text{font:600 11px var(--sans);fill:var(--muted)}
+svg.hex text.v{font:600 11px var(--mono);fill:var(--ink)}
+.attrs{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px 12px}
+.attr{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:baseline;border:1px solid var(--line);background:var(--panel);padding:8px 10px;border-radius:8px}
+.attr .l{font-weight:600}
+.attr .n{font:600 14px var(--mono);font-variant-numeric:tabular-nums;justify-self:end}
+.attr .d{grid-column:1/-1;color:var(--muted);font-size:12.5px}
+.bar5{grid-column:1/-1;height:4px;border-radius:2px;background:var(--sunk);overflow:hidden}
+.bar5 i{display:block;height:100%;background:var(--accent);transition:width .6s}
+@media (max-width:640px){.scorecard{grid-template-columns:1fr}}
+
+/* findings */
+.finding{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--bad);border-radius:8px;padding:9px 12px;display:grid;gap:3px}
+.finding .head{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.finding .where{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.finding .fix{color:var(--accent);font-size:13px}
+.finding .fix::before{content:"Fix  ";font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+.skipped{background:var(--sunk);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}
+.clean{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--muted)}
+.clean b{display:block;font:600 22px var(--mono);color:var(--accent);margin-bottom:4px}
+
+/* doors */
+.door{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px;cursor:pointer}
+.door.over{border-left-color:var(--bad)}
+.door:hover{border-color:var(--accent)}
+.door .head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.door .where{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.door .open{margin-left:auto;font-size:12px;color:var(--accent)}
+.chain{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:12px}
+.to{color:var(--faint)}
+.more{font-size:12px;padding:6px 12px;border-radius:6px;background:none;border:1px dashed var(--line);cursor:pointer;color:var(--muted);justify-self:start}
+
+/* the modal: the trace or the symbol on the left, the code on the right */
+dialog.dia{width:100vw;height:100vh;max-width:100vw;max-height:100vh;margin:0;padding:0;border:0;border-radius:0;background:var(--panel);color:var(--ink)}
+dialog.dia::backdrop{background:rgba(10,16,14,.45)}
+.dia-in{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100%}
+.dia-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.dia-title{font-family:var(--mono);font-weight:600;margin-right:auto;overflow-wrap:anywhere}
+.sbtn{font-size:12px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer}
+.sbtn:hover{border-color:var(--accent)}
+.sbtn[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.dia-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);min-height:0;overflow:hidden}
+.canvas{overflow:auto;background:var(--bg);min-height:0}
+.dia-foot{padding:8px 14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+.codepane{border-left:1px solid var(--line);overflow:auto;background:var(--panel);min-height:0}
+.codepane .ch{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--line);padding:8px 12px;font:12px var(--mono);color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:1}
+.codepane .ch b{color:var(--ink)}
+.codepane .hint{padding:16px}
+.code{margin:0;font:12.5px/1.55 var(--mono);padding:6px 0}
+.code .ln{display:grid;grid-template-columns:52px minmax(0,1fr);transition:background .5s,box-shadow .5s}
+.code .ln i{font-style:normal;color:var(--faint);text-align:right;padding-right:12px;user-select:none}
+.code .ln .src{padding-right:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.code .ln.fn{background:var(--accent-soft);box-shadow:inset 3px 0 var(--accent)}
+.code .ln.fn i{color:var(--accent)}
+.code .ln.hit{background:var(--hit-soft);box-shadow:inset 4px 0 var(--hit)}
+.code .ln.hit i{color:var(--hit);font-weight:600}
+/* while the animation reads down to the block, the call it reaches is not lit yet */
+.code.unlit .ln.hit{background:var(--accent-soft);box-shadow:inset 3px 0 var(--accent)}
+.code.unlit .ln.hit i{color:var(--accent);font-weight:400}
+.filebtn{margin-left:auto;font:12px var(--sans);padding:3px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--muted);cursor:pointer}
+.filebtn:hover,.filebtn[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
+.tk-k{color:#7a3e9d}.tk-s{color:#1d6b58}.tk-c{color:var(--faint);font-style:italic}.tk-n{color:#95590a}.tk-d{color:#a1352d;font-weight:600}.tk-f{color:#1a4f8b;font-weight:600}
+@media (prefers-color-scheme:dark){.tk-k{color:#c792ea}.tk-s{color:#8fd4b8}.tk-n{color:#eeb25a}.tk-d{color:#ee8a82}.tk-f{color:#82aaff}}
+.trace{padding:18px 22px;display:grid;max-width:720px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;cursor:pointer;display:grid;gap:2px}
+.step:hover{border-color:var(--accent)}
+.step.sel{border-color:var(--accent);background:var(--accent-soft)}
+.step .f{font:11px var(--mono);color:var(--faint)}
+.step .n{font:500 13.5px var(--mono)}
+.step .n .c{color:var(--accent);font-weight:600}
+.step .d{color:var(--muted);font-size:12.5px}
+.step .call{font:12px var(--mono);color:var(--warn)}
+.step .flag{font:11px var(--mono);color:var(--bad);background:var(--bad-soft);border-radius:4px;padding:0 6px;justify-self:start}
+.step .also{font:11px var(--mono);color:var(--faint)}
+.step.sink{border-style:dashed}
+.step.seen{opacity:.7}
+.step.onflow{border-left:3px solid var(--accent)}
+.step.next{border-color:var(--hit);box-shadow:0 0 0 1px var(--hit)}
+.branches{display:grid;gap:10px;margin-top:10px}
+.branch{border-left:2px solid var(--line);padding-left:14px;margin-left:22px;display:grid}
+.trace .down{padding-left:22px;color:var(--faint);font:13px var(--mono);height:20px;display:flex;align-items:center}
+.about{padding:18px 22px;display:grid;gap:14px;max-width:720px}
+.about .kind{display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;padding:2px 7px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.about .sname{font-family:var(--mono);font-size:17px;font-weight:600;overflow-wrap:anywhere}
+.about .sname .c{color:var(--accent)}
+.about .sdoc{color:var(--muted)}
+.about .where{font-family:var(--mono);font-size:12px;color:var(--muted)}
+/* stories: one issue told step by step, its tokens marked in the code */
+.story{padding:18px 22px;display:grid;gap:12px;max-width:720px}
+.story .issue{display:grid;gap:4px}
+.story .issue .t{font:600 13px var(--mono);color:var(--bad)}
+.story .issue .fix{color:var(--accent);font-size:13px}
+.story .tokens{display:flex;gap:6px;flex-wrap:wrap}
+.station{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;display:grid;gap:3px;cursor:pointer;transition:border-color .3s,background .3s,opacity .3s}
+.station.done{opacity:.55}
+.station.sel{border-color:var(--bad);background:var(--bad-soft);opacity:1}
+.station .f{font:11px var(--mono);color:var(--faint)}
+.station .n{font:500 13.5px var(--mono)}
+.station .cap{font-size:13px;color:var(--muted)}
+.station.sel .cap{color:var(--ink)}
+.station.last{border-style:dashed}
+.story .down{padding-left:22px;color:var(--faint);font:13px var(--mono);height:16px;display:flex;align-items:center}
+mark.mk{border-radius:3px;padding:0 2px;color:inherit;font-weight:600}
+mark.m0{background:#ffd6d1;box-shadow:0 0 0 1px #e27c70}mark.m1{background:#d3e8ff;box-shadow:0 0 0 1px #6fa3d8}
+mark.m2{background:#dcf2d6;box-shadow:0 0 0 1px #7cbf6c}mark.m3{background:#f3dcff;box-shadow:0 0 0 1px #b57fd6}
+@media (prefers-color-scheme:dark){mark.m0{background:#5a2620}mark.m1{background:#1d3b5c}mark.m2{background:#24401e}mark.m3{background:#43285a}}
+.code .ln.add{background:#e6f6e6}.code .ln.del{background:#fbe9e7}.code .ln.hunk{color:var(--faint);background:var(--sunk)}
+@media (prefers-color-scheme:dark){.code .ln.add{background:#17301a}.code .ln.del{background:#3a1c19}}
+.code .ln.add i::after{content:"+"}.code .ln.del i::after{content:"−"}
+.station .commit{font:12px var(--mono);color:var(--accent)}
+.code .ln.hit mark.mk{animation:pulse 1.2s ease-in-out 2}
+@keyframes pulse{50%{box-shadow:0 0 0 3px var(--hit)}}
+svg.tree{display:block;margin:20px}
+svg.tree .box rect{fill:var(--panel);stroke:var(--line)}
+svg.tree .box.root rect{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+svg.tree .box.more rect{stroke:var(--accent);stroke-dasharray:4 3}
+svg.tree .box.flagged rect{stroke:var(--bad)}
+svg.tree .box.seen{opacity:.6}
+svg.tree .box{cursor:pointer}
+svg.tree .box:hover rect{stroke:var(--accent)}
+svg.tree .f{font:11px var(--mono);fill:var(--faint)}
+svg.tree .n{font:500 13px var(--mono);fill:var(--ink)}
+svg.tree .n .c{fill:var(--accent);font-weight:600}
+svg.tree .cnt{font:600 11px var(--mono);fill:var(--accent)}
+svg.tree .flg{font:600 11px var(--mono);fill:var(--bad)}
+svg.tree .edge{fill:none;stroke:var(--faint);stroke-width:1.3}
+svg.tree marker path{fill:var(--faint)}
+.tabs{display:flex;gap:4px;background:var(--sunk);padding:3px;border-radius:8px}
+.tab{border:0;background:none;padding:5px 12px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:12px}
+.tab[aria-pressed=true]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+@media (max-width:900px){.dia-body{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.codepane{border-left:0;border-top:1px solid var(--line)}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <span class="brand">vibecheck<small id="pkg"></small></span>
+  <span class="counts" id="counts"></span>
+  <form id="play-form" class="playf"><input id="play-q" type="search" placeholder="Play a flow: handle_request  or  handle_request > open_session > save" autocomplete="off"><button class="sbtn" type="submit">Play</button></form>
+  <span class="live" id="live"><span class="dot"></span><span id="live-text">connecting</span></span>
+</div></header>
+<div class="errbox" id="err" hidden><pre id="err-text"></pre></div>
+<div class="page" id="main"></div>
+<dialog class="dia" id="dia">
+  <div class="dia-in">
+    <div class="dia-head">
+      <span class="dia-title" id="dia-title"></span>
+      <div class="tabs" id="dia-tabs" hidden><button class="tab" data-view="about" aria-pressed="true">About</button><button class="tab" data-view="up" aria-pressed="false">Who uses it</button><button class="tab" data-view="down" aria-pressed="false">What it calls</button></div>
+      <button class="sbtn" id="dia-all" hidden>Expand all</button>
+      <button class="sbtn" id="dia-none" hidden>Collapse</button>
+      <button class="sbtn" id="dia-play" aria-pressed="false" hidden title="Walk the trace: each file read down to its step, then on to the next">Animate</button>
+      <select class="sbtn" id="dia-speed" hidden title="Animation speed"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="3">3×</option></select>
+      <button class="sbtn" id="dia-close" autofocus>Close</button>
+    </div>
+    <div class="dia-body"><div class="canvas" id="dia-canvas"></div><div class="codepane" id="codepane"><p class="hint">Pick a step to read its code.</p></div></div>
+    <div class="dia-foot" id="dia-foot"></div>
+  </div>
+</dialog>
+<script>
+let G = null, VERSION = -1, FIRST = true, CUE = null;
+const state = {doors: 12};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const file = m => G.modules[m] ? G.modules[m].file : m.replace(/\./g, "/") + ".py";
+const S = id => G.symbols[id];
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+
+function nameParts(id){
+  const [m, n] = id.split(":");
+  if (n === undefined) return {file: file(m), cls: "", rest: "module"};
+  const s = S(id); const parts = n.split(".");
+  if (parts.length === 2) return {file: file(m), cls: parts[0], rest: "." + parts[1] + "()"};
+  if (s && s.kind === "class") return {file: file(m), cls: n, rest: ""};
+  return {file: file(m), cls: "", rest: n + (s && s.kind === "function" ? "()" : "")};
+}
+function symButton(id){
+  const s = S(id); if (!s) return `<button class="sym" data-mod="${esc(id)}">${esc(file(id))}</button>`;
+  const label = s.kind === "method" ? s.name.split(".").pop() + "()" : s.name + (s.kind === "function" ? "()" : "");
+  return `<button class="sym k-${s.kind}" data-sym="${esc(id)}">${esc(label)}</button>`;
+}
+
+/* ── the score: a player card of six attributes ── */
+function hexagon(attrs){
+  const cx = 170, cy = 125, R = 88, n = attrs.length;
+  const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [cx + Math.cos(a) * R * v / 100, cy + Math.sin(a) * R * v / 100]; };
+  const poly = vals => vals.map((v, i) => pt(i, v).map(x => x.toFixed(1)).join(",")).join(" ");
+  let g = "";
+  for (const lvl of [25, 50, 75, 100]) g += `<polygon class="grid" points="${poly(attrs.map(() => lvl))}"/>`;
+  attrs.forEach((a, i) => { const [x, y] = pt(i, 100); g += `<line class="axis" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>`; });
+  g += `<polygon class="now" points="${poly(attrs.map(a => a.value))}"/>`;
+  attrs.forEach((a, i) => { const [x, y] = pt(i, 122); const anchor = Math.abs(x - cx) < 8 ? "middle" : x > cx ? "start" : "end";
+    g += `<text x="${x}" y="${y - 4}" text-anchor="${anchor}">${esc(a.label)}</text><text class="v" x="${x}" y="${y + 9}" text-anchor="${anchor}">${a.value}</text>`; });
+  return `<svg class="hex" viewBox="0 0 340 250" role="img" aria-label="Score by attribute">${g}</svg>`;
+}
+function scoreCard(){
+  const sc = G.score;
+  const rows = sc.attributes.map(a => `<div class="attr"><span class="l">${esc(a.label)}</span><span class="n">${a.value}</span>
+      <span class="bar5"><i style="width:${a.value}%"></i></span><span class="d">${esc(a.detail)}</span></div>`).join("");
+  return `<div class="scorecard"><div class="overall"><b>${sc.overall}</b><span class="of">of 100</span></div>${hexagon(sc.attributes)}<div class="attrs">${rows}</div></div>`;
+}
+
+/* ── findings, grouped by check, each group with the check's note ── */
+function findingHtml(f){
+  // A module's finding names the file already; a symbol's names the symbol beside it.
+  const route = STORIES[f.check] ? null : flowOf(f);
+  const button = STORIES[f.check] ? `<button class="sbtn" data-story="${esc(f.id)}" title="Watch this issue happen in the code">watch</button>` : route ? `<button class="sbtn" data-play="${esc(route.join(">"))}" title="Animate the path this finding is about">play</button>` : "";
+  return `<div class="finding"><div class="head"><span class="where">${esc(f.file)}:${f.line}</span>${S(f.symbol) ? symButton(f.symbol) : ""}${button}</div>
+    <div class="msg">${md(f.message)}</div><div class="fix">${md(f.fix)}</div></div>`;
+}
+// The path a finding is about: a tunnel's or a forward's chain, or everything under the function it names.
+function flowOf(f){
+  if (!S(f.symbol) || !isOurs(f.symbol)) return null;
+  if (f.check === "tunnel" || f.check === "forward"){ const chain = [f.symbol, ...f.related.filter(isOurs)]; return chain.length > 1 ? chain : [f.symbol]; }
+  return [f.symbol];
+}
+function renderFindings(){
+  const skipped = G.skipped.map(s => `<div class="skipped"><span class="pill ok">${s.count} skipped</span><code>${esc(s.path)}</code><span>${esc(s.why)}</span></div>`).join("");
+  if (!G.findings.length) return `<div class="clean"><b>nothing to fix</b>Every check passed. Keep it that way.</div>` + skipped;
+  const groups = Object.keys(G.checks).map(check => [check, G.findings.filter(f => f.check === check)]).filter(([, fs]) => fs.length);
+  return groups.map(([check, fs]) => { const c = G.checks[check]; return `<section><h2 class="group-h"><span class="pill bad">${fs.length}</span>${esc(c.title)}<span class="why">${esc(c.note)}</span></h2><div class="stack">${fs.map(findingHtml).join("")}</div></section>`; }).join("") + skipped;
+}
+
+/* ── doors: every entrypoint, deepest first; one click reads its whole trace ── */
+function chainHtml(path){ return `<div class="chain">${path.map(id => symButton(id)).join('<span class="to">→</span>')}</div>`; }
+function renderDoors(){
+  if (!G.hops.length) return `<section><h2 class="group-h">Doors</h2><p class="hint">No entrypoints found. A routed function (<code>@app.get</code>…) or a <code>[project.scripts]</code> target is one; name others in <code>[tool.vibecheck] entries</code>.</p></section>`;
+  const shown = G.hops.slice(0, state.doors), rest = G.hops.length - shown.length;
+  return `<section><h2 class="group-h">Doors<span class="why">every entrypoint, deepest first; the shape to keep is the door, one function of the domain, the library (${G.mostHops} hops). Click one to read its whole trace, and animate it.</span></h2>
+    <div class="stack">${shown.map(h => `<div class="door ${h.hops > G.mostHops ? "over" : ""}" data-trace="${esc(h.entry)}"><div class="head"><span class="pill ${h.hops > G.mostHops ? "bad" : "ok"}">${h.hops} hops</span>${symButton(h.entry)}<span class="where">${esc(file(h.entry.split(":")[0]))}</span><span class="open">trace →</span></div>${chainHtml(h.path)}</div>`).join("")}
+    ${rest > 0 ? `<button class="more" data-more-doors>${rest} more</button>` : ""}</div></section>`;
+}
+
+/* ── code: the source of a symbol, the calls to the next steps marked ── */
+const SOURCES = {};
+async function sourceOf(path){
+  // A read that failed is not kept: the file may be mid-save, or the server mid-restart.
+  if (!(path in SOURCES)) SOURCES[path] = fetch("/source?file=" + encodeURIComponent(path), {cache: "no-store"}).then(r => r.ok ? r.text() : "").catch(() => "").then(t => { if (!t) delete SOURCES[path]; return t; });
+  return SOURCES[path];
+}
+// Python's and TypeScript's words together: a name is one language's keyword at most, and the page shows either.
+const KEYWORDS = new Set(("def class return if elif else for while try except finally with as async await import from raise pass break continue lambda yield in not and or is None True False match case self type"
+  + " const let var function new this throw catch export default interface extends implements typeof instanceof void null undefined true false switch of readonly private public protected static abstract enum keyof declare").split(" "));
+const STRING = /^[rbfuRBFU]{0,2}("""[\s\S]*?(?:"""|$)|'''[\s\S]*?(?:'''|$)|"(?:\\.|[^"\\])*"?|'(?:\\.|[^'\\])*'?)/;
+function highlight(line){
+  let out = "", i = 0;
+  const push = (cls, text) => { out += cls ? `<span class="${cls}">${esc(text)}</span>` : esc(text); };
+  while (i < line.length){
+    const rest = line.slice(i);
+    let m;
+    if (rest[0] === "#" && !/^#[A-Za-z_]/.test(rest) || rest.startsWith("//")){ push("tk-c", rest); break; }
+    if ((m = rest.match(STRING)) && /^[rbfuRBFU]{0,2}["']/.test(rest)){ push("tk-s", m[0]); i += m[0].length; continue; }
+    if ((m = rest.match(/^`(?:\\.|[^`\\])*`?/))){ push("tk-s", m[0]); i += m[0].length; continue; }
+    if ((m = rest.match(/^@[\w.]+/))){ push("tk-d", m[0]); i += m[0].length; continue; }
+    if ((m = rest.match(/^\d[\d_.]*/))){ push("tk-n", m[0]); i += m[0].length; continue; }
+    if ((m = rest.match(/^[A-Za-z_]\w*/))){
+      const word = m[0], before = line.slice(0, i).trimEnd();
+      push(/\b(def|class|function)$/.test(before) ? "tk-f" : KEYWORDS.has(word) ? "tk-k" : "", word); i += word.length; continue;
+    }
+    push("", rest[0]); i += 1;
+  }
+  return out;
+}
+// shown: the file on screen whole; tops: where each file was left, so coming back to one goes on from there.
+const CODE = {whole: false, id: null, calls: [], shown: null, tops: new Map()};
+// Scroll the pane to `to` over `ms`, eased; a newer glide cancels this one, which then resolves false.
+// Its clock runs at `rate()` times real time; at 0 it stands still, and on release it goes on from wherever
+// the pane is by then, over the time it had left.
+let GLIDE = 0;
+function glide(pane, to, ms, rate = () => 1){
+  const id = ++GLIDE, end = Math.max(0, Math.min(to, pane.scrollHeight - pane.clientHeight));
+  let from = pane.scrollTop, spent = 0, last = performance.now(), was = false;
+  return new Promise(done => {
+    if (end === from){ done(true); return; }
+    const tick = now => {
+      if (id !== GLIDE){ done(false); return; }
+      const r = rate();
+      if (!r){ was = true; last = now; requestAnimationFrame(tick); return; }
+      if (was){ was = false; from = pane.scrollTop; ms = Math.max(1, ms - spent); spent = 0; }
+      spent += (now - last) * r; last = now;
+      const k = Math.min(1, spent / ms), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(2 - 2 * k, 3) / 2;
+      pane.scrollTop = from + (end - from) * e;
+      if (k < 1) requestAnimationFrame(tick); else done(true);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+// Where the pane's scrollTop puts `el` at `at` (0 top, .5 centre) of what is visible under the sticky header.
+function scrollFor(pane, el, at){
+  const head = pane.querySelector(".ch")?.offsetHeight || 0, room = pane.clientHeight - head;
+  return el.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop - head - room * at + el.offsetHeight * at;
+}
+const callName = id => id.split(":")[1].split(".").pop() + "()";
+// calls: [{id, lines}], the calls of ours to mark. scroll: "auto" jumps to the first marked line, or glides
+// there when the same whole file is already on screen; "none" leaves it to the caller.
+async function showCode(id, calls = [], scroll = "auto"){
+  CODE.id = id; CODE.calls = calls;
+  const pane = document.getElementById("codepane"), s = S(id);
+  if (!s){ pane.innerHTML = `<p class="hint">No code for this one.</p>`; return; }
+  const path = file(s.module), text = await sourceOf(path);
+  if (!text){ pane.innerHTML = `<p class="hint">${esc(path)} could not be read.</p>`; return; }
+  const lines = text.split("\n");
+  // A method is shown under its class line, so the class it belongs to is always in sight.
+  const owner = s.owner ? S(s.owner) : null;
+  const to = s.line + s.lines - 1;
+  const hits = new Set(calls.flatMap(c => c.lines)), names = calls.map(c => callName(c.id)).join(", ");
+  let html = "";
+  if (CODE.whole){
+    for (let n = 1; n <= lines.length; n++){
+      const inside = n >= s.line && n <= to;
+      html += `<div class="ln ${inside ? "fn" : ""} ${inside && hits.has(n) ? "hit" : ""} ${n === s.line ? "start" : ""}"><i>${n}</i><span class="src">${highlight(lines[n - 1])}</span></div>`;
+    }
+  } else if (owner){
+    html += `<div class="ln"><i>${owner.line}</i><span class="src">${highlight(lines[owner.line - 1] ?? "")}</span></div>`;
+    if (s.line > owner.line + 1) html += `<div class="ln"><i>⋮</i><span class="src"></span></div>`;
+  }
+  for (let n = s.line; n <= to && !CODE.whole; n++){
+    html += `<div class="ln fn ${hits.has(n) ? "hit" : ""} ${n === s.line ? "start" : ""}"><i>${n}</i><span class="src">${highlight(lines[n - 1] ?? "")}</span></div>`;
+  }
+  const toggle = `<button class="filebtn" data-whole aria-pressed="${CODE.whole}" title="${CODE.whole ? "Back to this block alone" : "The whole file, this block marked"}">${CODE.whole ? "block" : "whole file"}</button>`;
+  const same = CODE.whole && CODE.shown === path, y = pane.scrollTop;
+  if (CODE.shown) CODE.tops.set(CODE.shown, y);
+  pane.innerHTML = `<div class="ch"><b>${esc(path)}:${s.line}</b>${names ? `<span class="tag">the marked ${hits.size > 1 ? "lines reach" : "line reaches"} ${esc(names)}</span>` : ""}${toggle}</div><pre class="code">${html}</pre>`;
+  CODE.shown = CODE.whole ? path : null;
+  pane.scrollTop = same ? y : CODE.whole ? CODE.tops.get(path) ?? 0 : 0;
+  if (scroll === "none") return;
+  const target = pane.querySelector(".ln.hit") || pane.querySelector(".ln.start");
+  if (!target) return;
+  const aim = scrollFor(pane, target, .5);
+  if (same) glide(pane, aim, Math.min(900, Math.max(350, Math.abs(aim - y) * .6)));
+  else { ++GLIDE; pane.scrollTop = aim; }
+}
+
+/* ── the trace of an entrypoint: every call of ours under it, in the order each body makes them ── */
+// nodes: the tree read top to bottom, each with its index; at: the one picked; call: the one call of it being read, or null for all.
+const TRACE = {entry: null, nodes: [], at: 0, call: null};
+const DIA = {mode: "trace"};
+function setTrace(tree){
+  TRACE.nodes = [];
+  (function walk(n, up, depth){ const node = {...n, i: TRACE.nodes.length, up, depth}; TRACE.nodes.push(node); node.kids = n.kids.map(k => walk(k, node, depth + 1)); return node; })(tree, null, 0);
+  TRACE.at = Math.min(TRACE.at, TRACE.nodes.length - 1);
+  TRACE.deepest = Math.max(...TRACE.nodes.map(n => n.depth));
+}
+function stepHtml(n){
+  const s = S(n.id), p = nameParts(n.id);
+  const reads = n.seen ? (TRACE.flow && TRACE.flow.includes(n.id) ? "↺ on the flow" : "↺ read above") : n.kids.length ? "→ calls " + esc(n.kids.map(k => callName(k.id)).join(", ")) : "the effect";
+  const card = `<div class="step ${n.onFlow ? "onflow" : ""} ${n.i === TRACE.at ? "sel" : ""} ${n.kids.length ? "" : "sink"} ${n.seen ? "seen" : ""} ${TRACE.call && TRACE.call === n ? "next" : ""}" data-step="${n.i}">
+      <span class="f">${esc(p.file)}${s ? ":" + s.line : ""}</span>
+      <span class="n">${p.cls ? `<span class="c">class ${esc(p.cls)}</span> › ` : ""}${esc(p.cls ? p.rest.slice(1) : p.rest)}</span>
+      ${s && s.doc && !n.seen ? `<span class="d">${esc(s.doc)}</span>` : ""}
+      <span class="call">${reads}</span>
+      ${!n.seen && findingsAt(n.id).length ? `<span class="flag" title="${esc(findingsAt(n.id).map(f => f.message).join("\n"))}">⚑ ${esc([...new Set(findingsAt(n.id).map(f => G.checks[f.check].title.toLowerCase()))].join(", "))}</span>` : ""}
+    </div>`;
+  // One call goes straight on below; two or more open a branch each, side by side in reading order.
+  if (n.kids.length === 1) return card + `<div class="down">↓</div>` + stepHtml(n.kids[0]);
+  return card + (n.kids.length ? `<div class="branches">${n.kids.map(k => `<div class="branch">${stepHtml(k)}</div>`).join("")}</div>` : "");
+}
+function drawTrace(scroll = "auto"){
+  const root = TRACE.nodes[0], n = TRACE.nodes[TRACE.at];
+  document.getElementById("dia-canvas").innerHTML = `<div class="trace">${stepHtml(root)}</div>`;
+  document.getElementById("dia-foot").textContent = `${TRACE.nodes.length} steps, ${TRACE.deepest} hops on the deepest path. Pick a step to read its code, with its calls to the steps under it marked.`;
+  return showCode(n.id, n.seen ? [] : TRACE.call ? [TRACE.call] : n.kids, scroll);
+}
+
+/* ── animate: the tree read as the code reads, each body down to a call, into it, and back for the next ── */
+const PLAY = {run: 0, on: false, paused: false, speed: 1};
+function syncPlay(){
+  const b = document.getElementById("dia-play");
+  b.textContent = !PLAY.on ? "Animate" : PLAY.paused ? "Resume" : "Pause";
+  b.setAttribute("aria-pressed", PLAY.on);
+}
+function stopPlay(){
+  if (!PLAY.on) return;
+  PLAY.on = PLAY.paused = false; ++PLAY.run; ++GLIDE;
+  document.querySelector("#codepane .code")?.classList.remove("unlit");
+  syncPlay();
+}
+// Each frame is a step and the one call of it read then; a step without calls is one frame, one read above none.
+const frames = n => {
+  if (n.seen) return [];
+  // In a flow, only the path is walked: each step down to its call of the next, then into it.
+  if (TRACE.flow && TRACE.flow.length > 1){ const k = n.kids.find(x => x.onFlow); return k ? [{n, call: k}, ...frames(k)] : [{n, call: null}]; }
+  return n.kids.length ? n.kids.flatMap(k => [{n, call: k}, ...frames(k)]) : [{n, call: null}];
+};
+async function play(){
+  if (PLAY.on){ PLAY.paused = !PLAY.paused; syncPlay(); return; }
+  const run = ++PLAY.run, alive = () => PLAY.run === run && document.getElementById("dia").open, rate = () => PLAY.paused ? 0 : PLAY.speed;
+  // A wait runs on the same clock as a glide: the speed scales it, a pause stops it.
+  const wait = ms => new Promise(done => {
+    let last = performance.now();
+    const tick = now => { ms -= (now - last) * rate(); last = now; if ((ms > 0 || !rate()) && alive()) requestAnimationFrame(tick); else done(); };
+    requestAnimationFrame(tick);
+  });
+  PLAY.on = true; PLAY.paused = false; syncPlay();
+  if (DIA.mode === "story"){ await playStory(alive, wait, rate); if (alive()) stopPlay(); return; }
+  CODE.whole = true; CODE.shown = null; CODE.tops = new Map();
+  const pane = document.getElementById("codepane"), pace = d => Math.min(3500, Math.max(700, Math.abs(d) * .9));
+  const read = new Set();
+  for (const {n, call} of frames(TRACE.nodes[0])){
+    await wait(0); if (!alive()) return;
+    TRACE.at = n.i; TRACE.call = call;
+    await drawTrace("none"); if (!alive()) return;
+    pane.querySelector(".code")?.classList.add("unlit");
+    // Instant, not smooth: the code pane is gliding at the same time, and Chrome drops one of two smooth scrolls.
+    document.querySelector("#dia-canvas .step.sel")?.scrollIntoView({block: "center", inline: "nearest"});
+    const start = pane.querySelector(".ln.start"), hit = pane.querySelector(".ln.hit");
+    // Back in a body already read down to its last call: straight on to the next one, not up to its top again.
+    if (start && !read.has(n)){ const to = scrollFor(pane, start, .15); if (!await glide(pane, to, pace(to - pane.scrollTop), rate) || !alive()) return; await wait(900); }
+    if (hit && alive()){ const to = scrollFor(pane, hit, .5); if (!await glide(pane, to, pace(to - pane.scrollTop), rate) || !alive()) return; await wait(600); }
+    pane.querySelector(".code")?.classList.remove("unlit");
+    await wait(1400);
+    read.add(n);
+  }
+  if (alive()){ TRACE.call = null; stopPlay(); }
+}
+/* ── a flow: the whole tree under any function, or the one path through the functions named ── */
+const isOurs = id => S(id) && (S(id).kind === "function" || S(id).kind === "method");
+function traceFrom(root){
+  const read = new Set();
+  const build = id => {
+    if (read.has(id)) return {id, lines: [], seen: true, kids: []};
+    read.add(id);
+    const at = S(id).callLines || {};
+    const kids = (S(id).calls || []).filter(isOurs).sort((a, b) => (Math.min(...(at[a] || [0])) - Math.min(...(at[b] || [0]))) || a.localeCompare(b));
+    return {id, lines: [], seen: false, kids: kids.map(k => ({...build(k), lines: at[k] || []}))};
+  };
+  return build(root);
+}
+// A flow keeps the whole tree under its first function, as a door's trace does; the path through the
+// names is marked on it, and the animation walks only that path. Every function of the path is kept
+// for the path: met anywhere else first, it shows there as read on the flow, not the other way round.
+function traceAlong(path){
+  const onPath = new Set(path), read = new Set();
+  const order = id => { const at = S(id).callLines || {}; return (S(id).calls || []).filter(isOurs).sort((a, b) => (Math.min(...(at[a] || [0])) - Math.min(...(at[b] || [0]))) || a.localeCompare(b)); };
+  const build = (id, step) => {
+    const along = step >= 0 && path[step] === id;
+    if (!along && (read.has(id) || onPath.has(id))) return {id, lines: [], seen: true, kids: []};
+    read.add(id);
+    const at = S(id).callLines || {}, next = along ? path[step + 1] : null;
+    return {id, lines: [], seen: false, onFlow: along, next, kids: order(id).map(k => ({...build(k, k === next ? step + 1 : -1), lines: at[k] || []}))};
+  };
+  return build(path[0], 0);
+}
+function findingsAt(id){ return G.findings.filter(f => f.symbol === id || f.related.includes(id)); }
+// Every door that reaches a function, each with its shortest chain of our calls to it; shortest first.
+function doorsReaching(target){
+  const callers = new Map();
+  for (const [id, s] of Object.entries(G.symbols)) if (isOurs(id)) for (const c of s.calls) { if (!callers.has(c)) callers.set(c, []); callers.get(c).push(id); }
+  const toward = new Map([[target, null]]), queue = [target];
+  while (queue.length){ const here = queue.shift(); for (const c of (callers.get(here) || []).sort()) if (!toward.has(c)){ toward.set(c, here); queue.push(c); } }
+  return G.hops.map(h => h.entry).filter(d => toward.has(d)).map(d => { const p = [d]; while (toward.get(p[p.length - 1])) p.push(toward.get(p[p.length - 1])); return p; }).sort((a, b) => a.length - b.length || a[0].localeCompare(b[0]));
+}
+function resolveName(name){
+  const n = name.trim(), all = Object.keys(G.symbols).filter(isOurs);
+  const hits = all.filter(id => id === n || id.endsWith(":" + n) || id.split(":")[1].endsWith("." + n));
+  return hits.length === 1 ? hits[0] : null;
+}
+function shortest(start, end){
+  const from = new Map([[start, null]]), queue = [start];
+  while (queue.length){
+    const here = queue.shift();
+    if (here === end){ const back = [end]; while (from.get(back[back.length - 1])) back.push(from.get(back[back.length - 1])); return back.reverse(); }
+    for (const c of [...(S(here).calls || [])].sort()) if (isOurs(c) && !from.has(c)){ from.set(c, here); queue.push(c); }
+  }
+  return null;
+}
+// "a > b > c": each name resolved, then the shortest chain of our own calls through them in order.
+function flowFrom(text){
+  const stops = text.split(">").map(x => x.trim()).filter(Boolean).map(resolveName);
+  if (!stops.length || stops.some(x => !x)) return null;
+  let path = [stops[0]];
+  for (let i = 1; i < stops.length; i++){ const leg = shortest(stops[i - 1], stops[i]); if (!leg) return null; path = path.concat(leg.slice(1)); }
+  return path;
+}
+function openFlow(path, autoplay){
+  if (!path.every(id => S(id))) return;
+  DIA.mode = "trace"; TRACE.entry = null; TRACE.flow = path; TRACE.at = 0; TRACE.call = null;
+  setTrace(path.length === 1 ? traceFrom(path[0]) : traceAlong(path));
+  const p = nameParts(path[0]);
+  document.getElementById("dia-title").textContent = path.length === 1 ? `${p.file} › ${p.cls}${p.rest} · everything under it` : `${path.map(callName).join(" → ")} · the flow marked, the tree whole`;
+  document.getElementById("dia-play").hidden = document.getElementById("dia-speed").hidden = false; stopPlay();
+  hideTree();
+  drawTrace(); openDia(); setHash();
+  if (autoplay) setTimeout(play, 400);
+}
+function openTrace(entry){
+  const h = G.hops.find(x => x.entry === entry); if (!h) return;
+  DIA.mode = "trace"; TRACE.entry = entry; TRACE.flow = null; TRACE.at = 0; TRACE.call = null; setTrace(h.tree);
+  document.getElementById("dia-title").textContent = `${file(entry.split(":")[0])} › ${entry.split(":")[1]}() · the whole trace`;
+  document.getElementById("dia-play").hidden = document.getElementById("dia-speed").hidden = false; stopPlay();
+  hideTree();
+  drawTrace(); openDia(); setHash();
+}
+
+/* ── a symbol: where it lives, who uses it, what it calls, and its code ── */
+function openSymbol(id){
+  const s = S(id); if (!s) return;
+  DIA.mode = "symbol"; DIA.symbol = id; DIA.view = "about"; DIA.open = new Set(); stopPlay();
+  document.getElementById("dia-play").hidden = document.getElementById("dia-speed").hidden = true;
+  document.getElementById("dia-tabs").hidden = false;
+  const p = nameParts(id), fs = G.findings.filter(f => f.symbol === id);
+  const list = (ids) => ids.length ? `<div class="chips">${ids.map(x => `<button class="chip" data-sym="${esc(x)}">${esc(x.split(":")[1] === undefined ? x : x.split(":")[1])}</button>`).join("")}</div>` : `<p class="hint">nobody</p>`;
+  document.getElementById("dia-title").textContent = `${p.file} › ${p.cls}${p.rest}`;
+  DIA.about = `<div class="about"><div><span class="kind">${esc(s.kind)}</span></div>
+    <div class="sname">${p.cls ? `<span class="c">${esc(p.cls)}</span>` : ""}${esc(p.rest)}</div>
+    ${s.doc ? `<div class="sdoc">${esc(s.doc)}</div>` : ""}
+    <div class="where">${esc(file(s.module))}:${s.line} · ${s.lines} lines</div>
+    ${fs.length ? `<div><div class="sec-h">To fix</div><div class="stack">${fs.map(findingHtml).join("")}</div></div>` : ""}
+    ${isOurs(id) ? `<div><button class="sbtn" data-play="${esc(id)}">play everything under it</button></div>` : ""}
+    ${isOurs(id) ? (doors => `<div><div class="sec-h">Doors that reach it (${doors.length})</div>${doors.length ? `<div class="stack">${doors.slice(0, 30).map(p => `<div class="door" data-play="${esc(p.join(">"))}"><div class="head"><span class="pill ok">${p.length - 1} hops</span>${esc(p.map(callName).join(" → "))}<span class="open">play →</span></div></div>`).join("")}${doors.length > 30 ? `<p class="hint">and ${doors.length - 30} more</p>` : ""}</div>` : `<p class="hint">none: nothing that comes in from outside calls it</p>`}</div>`)(doorsReaching(id)) : ""}
+    <div><div class="sec-h">Used by</div>${list(s.usedBy)}</div>
+    <div><div class="sec-h">Calls, of ours</div>${list(s.calls)}</div></div>`;
+  CODE.whole = false; showView(); showCode(id); openDia(); setHash();
+}
+/* ── stories: a tunnel, a clump, a constant parameter, told station by station in the code ── */
+// A station is a place in the code: a function whole, or a few lines around a call site, with the
+// lines to light and a caption. Each check tells its issue as a list of them.
+const blockOf = id => ({file: file(S(id).module), from: S(id).line, to: S(id).line + S(id).lines - 1, name: nameParts(id)});
+const handOn = (id, next) => next ? ((S(id).callLines || {})[next] || []) : [];
+const listed = names => names.map(n => `<code>${esc(n)}</code>`).join(", ");
+// Call sites as stations: a few lines around each, the call's line alone marked.
+const callStations = (sites, cap) => sites.map((c, i) => ({file: c.file, from: Math.max(1, c.line - 3), to: c.line + 3, focus: [c.line], only: "focus",
+  name: {file: c.file, cls: "", rest: `call ${i + 1} of ${sites.length}`}, cap: cap(i, sites.length)}));
+const bare = id => S(id).name.split(".").pop();
+const STORIES = {
+  duplicate(f){
+    const copies = [f.symbol, ...f.related];
+    return {tokens: [], stations: [
+      ...copies.map((id, i) => ({...blockOf(id), focus: range(S(id).line, S(id).line + S(id).lines - 1), cap: i === 0 ? `This body…` : `…is written again here${i > 1 ? `, and again` : ""}: copy ${i + 1} of ${copies.length}.`})),
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `One body in ${copies.length} places: a fix to one is a bug left in the others. Keep <b>${esc(callName(f.symbol))}</b> and call it.`, last: true},
+    ]};
+  },
+  ignored_return(f){
+    return {tokens: ["return", bare(f.symbol)], stations: [
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `<b>${esc(callName(f.symbol))}</b> works out a value and returns it…`},
+      ...callStations(f.sites, (i, n) => `…and call ${i + 1} of ${n} lets it fall on the floor.`),
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `Nobody reads what it returns: return nothing, or use it.`, last: true},
+    ]};
+  },
+  unused_default(f){
+    return {tokens: [f.key, bare(f.symbol)], stations: [
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `<code>${esc(f.key)}</code> has a default, so a caller could ask for something else…`},
+      ...callStations(f.sites, (i, n) => `…call ${i + 1} of ${n} never does.`),
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `A choice nobody makes: drop <code>${esc(f.key)}</code> and use the default inside.`, last: true},
+    ]};
+  },
+  unused_param(f){
+    return {tokens: [f.key, bare(f.symbol)], stations: [
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `<code>${esc(f.key)}</code> comes in through the signature, and the body never reads it.`},
+      ...callStations(f.sites, (i, n) => `Still, call ${i + 1} of ${n} works it out and hands it over.`),
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `Drop <code>${esc(f.key)}</code> here and from every call.`, last: true},
+    ]};
+  },
+  scattered_api(f){
+    const api = f.key, last = api.split(".").pop();
+    return {tokens: [last], stations: [
+      ...f.sites.map((c, i) => ({file: c.file, from: Math.max(1, c.line - 3), to: c.line + 3, focus: [c.line], only: "focus",
+        name: {file: c.file, cls: "", rest: `module ${i + 1} of ${f.sites.length}`}, cap: `<code>${esc(api)}</code> called raw, ${i ? "again, " : ""}in ${esc(c.file)}.`})),
+      {...f.sites.map(c => ({file: c.file, from: Math.max(1, c.line - 3), to: c.line + 3, focus: [c.line], only: "focus", name: {file: c.file, cls: "", rest: "the first"}}))[0],
+        cap: `${f.sites.length} modules each know how to use <code>${esc(api)}</code>. One function of ours in front of it, and the library is in one place.`, last: true},
+    ]};
+  },
+  unstable_dependency(f){
+    const mod = f.symbol, worst = f.key, importers = importersOf(mod);
+    return {tokens: [worst.split(".").pop(), mod.split(".").pop()], stations: [
+      lineOf(importers[0] || mod, (importers[0] ? G.modules[importers[0]].imports[mod] : 1), {file: file(importers[0] || mod), cls: "", rest: `${importers.length} modules lean on ${mod}`}, `${importers.length} modules import <b>${esc(mod)}</b>: it had better not move much.`),
+      lineOf(mod, f.line, {file: file(mod), cls: "", rest: mod}, `But <b>${esc(mod)}</b> leans on <b>${esc(worst)}</b>…`),
+      lineOf(worst, 1, {file: file(worst), cls: "", rest: worst}, `…which imports ${Object.keys(G.modules[worst].imports).length} modules and moves whenever any of them does.`),
+      {...lineOf(mod, f.line, {file: file(mod), cls: "", rest: mod}, `The stable leans on the unstable. Move what it needs of <b>${esc(worst)}</b> down, or turn the arrow around.`), last: true},
+    ]};
+  },
+  feature_envy(f){
+    const cls = f.related[0];
+    return {tokens: [f.key, "self"], stations: [
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `<b>${esc(callName(f.symbol))}</b> lives in <b>${esc(S(S(f.symbol).owner).name)}</b>, and reads <code>${esc(f.key)}</code> far more than <code>self</code>.`},
+      {...blockOf(cls), focus: [S(cls).line], tokens: [], cap: `Everything it wants is here, in <b>${esc(S(cls).name)}</b>.`},
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `Move it where its data is, or give <b>${esc(S(cls).name)}</b> the method it keeps reaching for.`, last: true},
+    ]};
+  },
+  single_implementation(f){
+    const only = f.related[0];
+    return {tokens: [bare(f.symbol)], stations: [
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `<b>${esc(S(f.symbol).name)}</b> is abstract: a shape for many…`},
+      {...blockOf(only), focus: [S(only).line], cap: `…and <b>${esc(S(only).name)}</b> is the only one there is.`},
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `An abstraction nothing varies. Fold it into its one implementation until a second one exists.`, last: true},
+    ]};
+  },
+  bool_flag(f){
+    const [split, ...callers] = f.sites, flag = f.key;
+    return {tokens: [flag, "True", "False"], stations: [
+      {...blockOf(f.symbol), focus: range(split.from, split.to), cap: `<b>${esc(callName(f.symbol))}</b> asks <code>${esc(flag)}</code> before it does anything: the body is two bodies.`},
+      ...callers.map((c, i) => ({file: c.file, from: Math.max(1, c.line - 3), to: c.line + 3, focus: [c.line], only: "focus",
+        name: {file: c.file, cls: "", rest: `caller ${i + 1} of ${callers.length}`}, cap: `Caller ${i + 1} of ${callers.length} picks a side by hand, with a literal.`})),
+      {...blockOf(f.symbol), focus: range(split.from, split.to), cap: `Every caller already knows which half it wants: give each half its own name, and let it call that one.`, last: true},
+    ]};
+  },
+  shotgun(f){
+    const mine = f.file, theirs = file(f.key);
+    return {tokens: [], stations: [
+      {file: mine, from: 1, to: 1, focus: [1], name: {file: mine, cls: "", rest: f.symbol}, cap: `One file…`},
+      {file: theirs, from: 1, to: 1, focus: [1], name: {file: theirs, cls: "", rest: f.key}, cap: `…and another, in a different folder.`},
+      ...f.commits.map((c, i) => ({diff: c.hash, files: [mine, theirs], file: mine, from: 1, to: 1, focus: [],
+        name: {file: `commit ${c.hash}`, cls: "", rest: c.subject}, cap: `Change ${i + 1} of ${f.commits.length} had to touch both.`})),
+      {file: mine, from: 1, to: 1, focus: [1], name: {file: mine, cls: "", rest: f.symbol}, cap: `${f.message.replace(/`/g, "")} One thing lives in two places: put them together, or cut the seam they share.`, last: true},
+    ]};
+  },
+  tests_only(f){
+    const name = S(f.symbol).name.split(".").pop();
+    // One station per test: the lines of one test that name it are read together.
+    const tests = new Map();
+    for (const u of f.sites){ const k = `${u.file}:${u.from}`; if (!tests.has(k)) tests.set(k, {file: u.file, from: u.from, to: u.to, focus: []}); tests.get(k).focus.push(u.line); }
+    // A use outside any function is the test file's import of it; the rest sit inside a test.
+    const each = [...tests.values()], inTests = each.filter(t => t.from !== t.to);
+    const stationOf = t => t.from === t.to
+      ? {...t, from: t.from, to: t.to, name: {file: t.file, cls: "", rest: "the import"}, cap: `${esc(t.file)} imports it at line ${t.focus[0]}…`}
+      : {...t, name: {file: t.file, cls: "", rest: `test ${inTests.indexOf(t) + 1} of ${inTests.length}`}, cap: `…and test ${inTests.indexOf(t) + 1} of ${inTests.length} uses it, at line ${t.focus.join(", ")}.`};
+    return {tokens: [name], stations: [
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `<b>${esc(callName(f.symbol))}</b> is defined here, and nothing in the package calls it.`},
+      ...each.map(stationOf),
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `Tested, and waiting for a caller. Give it one, or delete it with its tests.`, last: true},
+    ]};
+  },
+  home_only_public(f){
+    const name = S(f.symbol).name, callers = (S(f.symbol).usedBy || []).filter(u => S(u));
+    const calls = callers.map((u, i) => {
+      const at = (S(u).callLines || {})[f.symbol] || [];
+      const who = nameParts(u);
+      return {...blockOf(u), focus: at, cap: `Called by <b>${esc(who.cls + who.rest)}</b>${at.length ? ` at line ${at.join(", ")}` : ""}, in the same file.`};
+    });
+    return {tokens: [name], stations: [
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `<b>${esc(name)}</b> is public: nothing says it is only for this file.`},
+      ...calls,
+      {...blockOf(f.symbol), focus: [S(f.symbol).line], cap: `Every call is here, in ${esc(file(S(f.symbol).module))}. No other module, test or framework names it: <code>_${esc(name)}</code> says so.`, last: true},
+    ]};
+  },
+  forward(f){
+    const target = f.related[0], short = callName(f.symbol);
+    const callers = (S(f.symbol).usedBy || []).filter(u => S(u) && (S(u).callLines || {})[f.symbol]);
+    const stations = callers.map((u, i) => ({...blockOf(u), focus: S(u).callLines[f.symbol], cap: `Caller ${i + 1} of ${callers.length} calls <b>${esc(short)}</b> at line ${S(u).callLines[f.symbol][0]}…`}));
+    stations.push({...blockOf(f.symbol), focus: handOn(f.symbol, target), cap: `…which does nothing but hand every argument on to <b>${esc(callName(target))}</b>: a layer with no work in it.`});
+    stations.push({...blockOf(target), focus: [S(target).line], cap: `This is where the work is. ${callers.length ? "The callers can call it directly." : "Nothing calls the forward either."}`, last: true});
+    return {tokens: [short.slice(0, -2), callName(target).slice(0, -2)], stations};
+  },
+  hub(f){
+    const hub = f.symbol, importers = importersOf(hub).map(m => [m, takenBy(hub, m)]).sort((a, b) => a[1].length - b[1].length || a[0].localeCompare(b[0]));
+    const all = Object.values(G.symbols).filter(s => s.module === hub && !s.owner && !s.private).length;
+    const first = lineOf(hub, 1, {file: file(hub), cls: "", rest: "the hub"}, `${importers.length} modules import it, for ${all} public names, and it imports ${Object.keys(G.modules[hub].imports).length} itself.`);
+    const stations = importers.map(([m, names]) => lineOf(m, G.modules[m].imports[hub], {file: file(m), cls: "", rest: m}, `Takes <b>${names.length}</b> of ${all}${names.length ? `: ${listed(names.slice(0, 6))}${names.length > 6 ? "…" : ""}` : ""}. It still drags everything the hub imports.`, {tokens: names}));
+    stations.push({...first, cap: `Every importer takes a sliver: split it along what they take, and each piece imports less.`, last: true});
+    return {tokens: [hub.split(".").pop()], stations: [first, ...stations]};
+  },
+  cycle(f){
+    const ring = ringOrder([f.symbol, ...f.related]);
+    const stations = ring.map((m, i) => {
+      const next = ring[(i + 1) % ring.length], at = G.modules[m].imports[next];
+      return lineOf(m, at || 1, {file: file(m), cls: "", rest: m}, at ? `imports <b>${esc(next)}</b> at line ${at}<span data-lazy="${esc(file(m))}:${at}"></span>` : `is imported by the one before`, {tokens: [next.split(".").pop()]});
+    });
+    stations.push({...stations[0], cap: `…and round again: none of them can be read, loaded or tested without the others.`, last: true});
+    return {tokens: ring.map(m => m.split(".").pop()), stations};
+  },
+  tunnel(f){
+    const way = [f.symbol, ...f.related], p = f.key;
+    return {tokens: [p], stations: way.map((id, i) => {
+      const next = way[i + 1], at = handOn(id, next), last = i === way.length - 1;
+      const cap = i === 0 ? `<code>${esc(p)}</code> comes in here, and is only handed on${at.length ? `, at line ${at[0]}` : ""}.`
+        : last ? `Here, ${way.length - 1} functions later, <code>${esc(p)}</code> is finally read.`
+        : `It crosses <b>${esc(callName(id))}</b> untouched: in through the signature, out at line ${at[0] || "?"}.`;
+      return {...blockOf(id), focus: at, cap, last};
+    })};
+  },
+  clump(f){
+    const way = inCallOrder([f.symbol, ...f.related]), names = f.key.split("+");
+    return {tokens: names, stations: way.map((id, i) => {
+      const at = way.flatMap(other => handOn(id, other)).sort((a, b) => a - b);
+      const cap = i === 0 ? `${listed(names)} come in together${at.length ? ` and leave together at line ${at[0]}` : ""}.`
+        : at.length ? `Still together: in through the signature, on together at line ${at[0]}.` : `…and in together here, as one thing that has no name.`;
+      return {...blockOf(id), focus: at, cap, last: i === way.length - 1};
+    })};
+  },
+  constant_param(f){
+    const [param, literal] = f.key.split(/=(.*)/s), n = f.sites.length;
+    const calls = f.sites.map((site, i) => ({file: site.file, from: Math.max(1, site.line - 3), to: site.line + 3, focus: [site.line],
+      name: {file: site.file, cls: "", rest: `caller ${i + 1} of ${n}`}, only: "focus", cap: `Caller ${i + 1} of ${n} passes <code>${esc(literal)}</code>.`}));
+    return {tokens: [param, literal], stations: [...calls, {...blockOf(f.symbol), focus: [S(f.symbol).line], tokens: [param],
+      cap: `So inside <b>${esc(callName(f.symbol))}</b>, <code>${esc(param)}</code> is always <code>${esc(literal)}</code>: a constant with a seat in the signature.`, last: true}]};
+  },
+};
+// A group of functions in the order the calls go: first the ones no other member calls, then breadth first down.
+function inCallOrder(ids){
+  const members = new Set(ids), calls = id => (S(id).calls || []).filter(c => members.has(c) && c !== id);
+  const called = new Set(ids.flatMap(calls)), order = [], queue = ids.filter(id => !called.has(id));
+  while (queue.length){ const id = queue.shift(); if (order.includes(id)) continue; order.push(id); queue.push(...calls(id).sort()); }
+  return [...order, ...ids.filter(id => !order.includes(id))];
+}
+// A station on one line of a module: an import, or the top of a file.
+const lineOf = (m, line, name, cap, extra = {}) => ({file: file(m), from: line, to: line, focus: [line], name, cap, ...extra});
+const importersOf = m => Object.keys(G.modules).filter(o => m in G.modules[o].imports);
+// The names a module takes of another: what its `from x import` says, or else the symbols of it it names.
+const takenBy = (hub, m) => (G.modules[m].taken || {})[hub]?.length ? G.modules[m].taken[hub] : Object.values(G.symbols).filter(s => s.module === hub && !s.owner && !s.private && s.usedBy.some(u => u.split(":")[0] === m)).map(s => s.name);
+// A ring of modules in the order the imports go: from the first, always on to a member it imports not yet met.
+function ringOrder(members){
+  const set = new Set(members), ring = [members[0]];
+  while (true){ const next = Object.keys(G.modules[ring[ring.length - 1]].imports).find(o => set.has(o) && !ring.includes(o)); if (!next) break; ring.push(next); }
+  return [...ring, ...members.filter(m => !ring.includes(m))];
+}
+const range = (a, b) => Array.from({length: b - a + 1}, (_, i) => a + i);
+const STORY = {f: null, tale: null, at: 0};
+// Wrap every token of the code's text (never inside a tag) in its colour.
+// Each token keeps its colour from `palette`, the story's whole list, whichever of them a station marks.
+function markTokens(html, tokens, palette = tokens){
+  if (!tokens.length) return html;
+  const index = new Map(tokens.map((t, i) => [esc(t), palette.includes(t) ? palette.indexOf(t) : i]));
+  const words = [...index.keys()].map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const re = new RegExp(`(?<![\\w.])(${words.join("|")})(?![\\w])`, "g");
+  return html.replace(/(^|>)([^<]*)/g, (m, open, text) => open + text.replace(re, w => `<mark class="mk m${index.get(w) % 4}">${w}</mark>`));
+}
+// A commit's station: what it changed in each file of the pair, one after the other.
+async function showDiff(st){
+  const pane = document.getElementById("codepane");
+  const parts = await Promise.all(st.files.map(f => fetch(`/diff?commit=${st.diff}&file=${encodeURIComponent(f)}`, {cache: "no-store"}).then(r => r.ok ? r.text() : "").catch(() => "")));
+  let html = "";
+  st.files.forEach((f, k) => {
+    html += `<div class="ln hunk"><i></i><span class="src"><b>${esc(f)}</b></span></div>`;
+    for (const line of parts[k].split("\n")){
+      if (/^(diff |index |--- |\+\+\+ )/.test(line) || !line) continue;
+      const kind = line.startsWith("@@") ? "hunk" : line[0] === "+" ? "add" : line[0] === "-" ? "del" : "";
+      html += `<div class="ln ${kind}"><i></i><span class="src">${kind === "hunk" ? esc(line) : highlight(line.slice(1))}</span></div>`;
+    }
+  });
+  pane.innerHTML = `<div class="ch"><b>commit ${esc(st.diff)}</b><span class="tag">${esc(st.name.rest)}</span></div><pre class="code">${html}</pre>`;
+  CODE.shown = null; pane.scrollTop = 0;
+}
+async function showStation(st, tokens, scroll = "auto"){
+  if (st.diff) return showDiff(st);
+  const pane = document.getElementById("codepane"), text = await sourceOf(st.file);
+  if (!text){ pane.innerHTML = `<p class="hint">${esc(st.file)} could not be read.</p>`; return; }
+  const lines = text.split("\n"), hits = new Set(st.focus), own = st.tokens || tokens;
+  // A station marks its tokens across its block, or, at a call site, on the call's line alone.
+  const marked = n => st.only === "focus" ? hits.has(n) : n >= st.from && n <= st.to;
+  let html = "";
+  for (let n = 1; n <= lines.length; n++){
+    const inside = n >= st.from && n <= st.to, line = highlight(lines[n - 1]);
+    html += `<div class="ln ${inside ? "fn" : ""} ${hits.has(n) ? "hit" : ""} ${n === st.from ? "start" : ""}"><i>${n}</i><span class="src">${marked(n) ? markTokens(line, own, tokens) : line}</span></div>`;
+  }
+  const same = CODE.shown === st.file, y = pane.scrollTop;
+  pane.innerHTML = `<div class="ch"><b>${esc(st.file)}:${st.focus[0] || st.from}</b><span class="tag">${tokens.map((t, i) => `<mark class="mk m${i % 4}">${esc(t)}</mark>`).join(" ")}</span></div><pre class="code">${html}</pre>`;
+  CODE.shown = st.file;
+  pane.scrollTop = same ? y : 0;
+  // An import inside a function is lazy: the cycle it closes hides from import time.
+  const lazy = document.querySelector(`#dia-canvas .station.sel [data-lazy]`);
+  if (lazy && /^\s/.test(lines[st.focus[0] - 1] || "")) lazy.textContent = ", inside a function: a lazy import, which hides the cycle until it runs";
+  if (scroll === "none") return;
+  const target = pane.querySelector(".ln.hit") || pane.querySelector(".ln.start");
+  if (target){ ++GLIDE; pane.scrollTop = scrollFor(pane, target, .45); }
+}
+function drawStory(){
+  const {f, tale, at} = STORY;
+  const cards = tale.stations.map((st, i) => `${i ? `<div class="down">↓</div>` : ""}<div class="station ${i === at ? "sel" : i < at ? "done" : ""} ${st.last ? "last" : ""}" data-station="${i}">
+      <span class="f">${st.diff ? `<span class="commit">${esc(st.name.file)}</span>` : `${esc(st.file)}:${st.focus[0] || st.from}`}</span>
+      <span class="n">${st.name.cls ? `<b>${esc(st.name.cls)}</b>` : ""}${esc(st.name.rest)}</span>
+      <span class="cap">${st.cap}</span></div>`).join("");
+  document.getElementById("dia-canvas").innerHTML = `<div class="story"><div class="issue"><span class="t">${esc(G.checks[f.check].title)}</span><span>${md(f.message)}</span><span class="fix">Fix: ${md(f.fix)}</span></div>
+    <div class="tokens">${tale.tokens.map((t, i) => `<mark class="mk m${i % 4}">${esc(t)}</mark>`).join("")}</div>${cards}</div>`;
+  document.getElementById("dia-foot").textContent = `${tale.stations.length} stations. Watch plays them in order; click one to read it.`;
+  document.querySelector("#dia-canvas .station.sel")?.scrollIntoView({block: "center"});
+  return showStation(tale.stations[at], tale.tokens);
+}
+function openStory(id, autoplay){
+  const f = G.findings.find(x => x.id === id); if (!f || !STORIES[f.check]) return;
+  DIA.mode = "story"; STORY.f = f; STORY.tale = STORIES[f.check](f); STORY.at = 0; CODE.shown = null;
+  document.getElementById("dia-title").textContent = `${G.checks[f.check].title} · ${f.file}:${f.line}`;
+  document.getElementById("dia-play").hidden = document.getElementById("dia-speed").hidden = false; stopPlay(); hideTree();
+  drawStory(); openDia(); setHash();
+  if (autoplay) setTimeout(play, 400);
+}
+async function playStory(alive, wait, rate){
+  const pane = document.getElementById("codepane"), pace = d => Math.min(2500, Math.max(600, Math.abs(d) * .8));
+  for (let i = 0; i < STORY.tale.stations.length; i++){
+    STORY.at = i; await drawStory(); if (!alive()) return;
+    const start = pane.querySelector(".ln.start"), hit = pane.querySelector(".ln.hit");
+    if (start && hit && start !== hit){ pane.scrollTop = scrollFor(pane, start, .2); await wait(700); const to = scrollFor(pane, hit, .45); if (!await glide(pane, to, pace(to - pane.scrollTop), rate) || !alive()) return; }
+    await wait(STORY.tale.stations[i].last ? 2600 : 2000); if (!alive()) return;
+  }
+}
+
+/* ── the diagram: who uses a symbol, or what it calls, as a tree opened box by box ── */
+function hideTree(){ document.getElementById("dia-tabs").hidden = document.getElementById("dia-all").hidden = document.getElementById("dia-none").hidden = true; }
+function showView(){
+  document.querySelectorAll("#dia-tabs .tab").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === DIA.view));
+  const tree = DIA.view !== "about";
+  document.getElementById("dia-all").hidden = document.getElementById("dia-none").hidden = !tree;
+  if (!tree){ document.getElementById("dia-canvas").innerHTML = DIA.about; document.getElementById("dia-foot").textContent = "Click a name to move to it."; return; }
+  drawDiagram();
+}
+const usersOf = id => S(id) ? [...new Set(S(id).usedBy)].filter(u => S(u)).sort() : [];
+const calleesOf = id => S(id) ? [...S(id).calls].filter(c => S(c)).sort() : [];
+const diaKids = id => DIA.view === "up" ? usersOf(id) : calleesOf(id);
+function buildTree(id, path){
+  const key = [...path, id].join(">"), seen = path.includes(id);
+  const kids = seen ? [] : diaKids(id);
+  const open = !seen && (!path.length || DIA.open.has(key));
+  return {id, key, seen, count: kids.length, open, children: open ? kids.map(k => buildTree(k, [...path, id])) : []};
+}
+function drawDiagram(){
+  const root = buildTree(DIA.symbol, []);
+  const H = 46, GAP = 12, COLGAP = 84;
+  const width = n => { const p = nameParts(n.id); return Math.ceil(Math.max(p.file.length * 6.7, (p.cls.length + p.rest.length) * 7.9) + 38); };
+  const cols = [], all = [];
+  (function walk(n, d){ n.depth = d; cols[d] = Math.max(cols[d] || 0, width(n)); n.children.forEach(c => walk(c, d + 1)); })(root, 0);
+  let y = 0;
+  (function place(n){ if (!n.children.length){ n.y = y; y += H + GAP; } else { n.children.forEach(place); n.y = (n.children[0].y + n.children[n.children.length - 1].y) / 2; } all.push(n); })(root);
+  const X = []; let acc = 0; cols.forEach((w, d) => { X[d] = acc; acc += w + COLGAP; });
+  const W = acc - COLGAP, Ht = Math.max(y - GAP, H);
+  all.forEach(n => { n.w = cols[n.depth]; n.x = DIA.view === "up" ? W - X[n.depth] - cols[n.depth] : X[n.depth]; });
+  let edges = "", boxes = "";
+  for (const n of all){
+    for (const c of n.children){
+      const [a, b] = DIA.view === "up" ? [c, n] : [n, c];
+      const x1 = a.x + a.w, y1 = a.y + H / 2, x2 = b.x, y2 = b.y + H / 2, mx = (x1 + x2) / 2;
+      edges += `<path class="edge" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2 - 3},${y2}" marker-end="url(#arrow)"/>`;
+    }
+    const p = nameParts(n.id), flagged = !n.seen && findingsAt(n.id).length;
+    const cls = [!n.key.includes(">") ? "root" : n.seen ? "seen" : n.count && !n.open ? "more" : "", flagged ? "flagged" : ""].join(" ");
+    const mark = n.seen ? "↺" : n.count && !n.open ? "+" + n.count : "";
+    boxes += `<g class="box ${cls}" data-key="${esc(n.key)}" transform="translate(${n.x},${n.y})"><rect width="${n.w}" height="${H}" rx="7"/><text class="f" x="11" y="17">${esc(p.file)}</text><text class="n" x="11" y="35"><tspan class="c">${esc(p.cls)}</tspan>${esc(p.rest)}</text>${mark ? `<text class="cnt" x="${n.w - 9}" y="17" text-anchor="end">${mark}</text>` : ""}${flagged ? `<text class="flg" x="${n.w - 9}" y="37" text-anchor="end">⚑</text>` : ""}</g>`;
+  }
+  document.getElementById("dia-canvas").innerHTML = `<svg class="tree" width="${W}" height="${Ht}" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Usage tree"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z"/></marker></defs>${edges}${boxes}</svg>`;
+  document.getElementById("dia-foot").textContent = (DIA.view === "up" ? "Arrows point from the one that uses to the one used. " : "Arrows point from the caller to the one called. ") + "A box with +N has N more to open: click it. ↺ is already on that path. ⚑ carries a finding.";
+}
+function expandAll(limit){
+  const queue = [[DIA.symbol, []]]; let n = 0;
+  while (queue.length && n < limit){ const [id, path] = queue.shift(); if (path.includes(id)) continue; if (path.length){ DIA.open.add([...path, id].join(">")); n++; } diaKids(id).forEach(k => queue.push([k, [...path, id]])); }
+  drawDiagram();
+}
+function openDia(){ const d = document.getElementById("dia"); if (!d.open) d.showModal(); }
+function setHash(){
+  const d = document.getElementById("dia");
+  const h = !d.open ? "" : DIA.mode === "story" ? "story=" + encodeURIComponent(STORY.f.id) : DIA.mode === "trace" && TRACE.flow ? "play=" + encodeURIComponent(TRACE.flow.join(">")) : DIA.mode === "trace" ? "trace=" + encodeURIComponent(TRACE.entry) : "sym=" + encodeURIComponent(DIA.symbol);
+  history.replaceState(null, "", h ? "#" + h : location.pathname);
+}
+function fromHash(){
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("story")) openStory(h.get("story"), true);
+  else if (h.get("play")) openFlow(h.get("play").split(">"), true);
+  else if (h.get("trace")) openTrace(h.get("trace"));
+  else if (h.get("sym")) openSymbol(h.get("sym"));
+}
+
+/* ── render and events ── */
+function render(){
+  if (!G) return;
+  const y = window.scrollY;
+  document.getElementById("main").innerHTML = scoreCard() + renderFindings() + renderDoors();
+  window.scrollTo(0, y);
+  const n = Object.keys(G.modules).length, sy = Object.values(G.symbols);
+  document.getElementById("pkg").textContent = G.package;
+  document.getElementById("counts").innerHTML = `<span>${n} modules · ${sy.filter(s => s.kind === "class" && !s.private).length} classes · ${sy.filter(s => s.kind === "function" && !s.private).length} functions</span><span class="pill ${G.findings.length ? "bad" : "ok"}">${G.findings.length} to fix</span>`;
+}
+document.addEventListener("click", e => {
+  const t = e.target;
+  const sto = t.closest("[data-story]"); if (sto){ e.preventDefault(); openStory(sto.dataset.story, true); return; }
+  const station = t.closest("[data-station]"); if (station){ stopPlay(); STORY.at = Number(station.dataset.station); drawStory(); return; }
+  const pl = t.closest("[data-play]"); if (pl){ e.preventDefault(); openFlow(pl.dataset.play.split(">"), true); return; }
+  const sym = t.closest("[data-sym]"); if (sym){ e.preventDefault(); openSymbol(sym.dataset.sym); return; }
+  const door = t.closest("[data-trace]"); if (door){ openTrace(door.dataset.trace); return; }
+  if (t.closest("[data-more-doors]")){ state.doors = G.hops.length; render(); return; }
+  if (t.closest("[data-whole]")){ stopPlay(); CODE.whole = !CODE.whole; showCode(CODE.id, CODE.calls); return; }
+  const tab = t.closest("#dia-tabs .tab"); if (tab){ DIA.view = tab.dataset.view; DIA.open = new Set(); showView(); return; }
+  const box = t.closest("g.box"); if (box){
+    const k = box.dataset.key, ids = k.split(">"), id = ids[ids.length - 1];
+    // Who uses it: mark where the box names the one it points at. What it calls: its body, its calls marked.
+    const up = DIA.view === "up" && ids.length > 1 ? ids[ids.length - 2] : null;
+    const at = up ? (S(id).callLines || {})[up] : null;
+    showCode(id, at ? [{id: up, lines: at}] : []);
+    if (!k.includes(">")) return;
+    if (DIA.open.has(k)) [...DIA.open].forEach(x => { if (x === k || x.startsWith(k + ">")) DIA.open.delete(x); }); else DIA.open.add(k);
+    drawDiagram(); return; }
+  const step = t.closest("[data-step]"); if (step){ stopPlay(); TRACE.at = Number(step.dataset.step); TRACE.call = null; drawTrace(); return; }
+});
+document.getElementById("play-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const form = e.target, path = G ? flowFrom(document.getElementById("play-q").value) : null;
+  form.classList.toggle("bad", !path);
+  form.title = path ? "" : "A name that is not one function of ours, or no path of our calls between two of them";
+  if (path) openFlow(path, true);
+});
+document.getElementById("dia-all").onclick = () => expandAll(300);
+document.getElementById("dia-none").onclick = () => { DIA.open = new Set(); drawDiagram(); };
+document.getElementById("dia-close").onclick = () => document.getElementById("dia").close();
+document.getElementById("dia").addEventListener("close", () => { stopPlay(); setHash(); });
+document.getElementById("dia-play").onclick = play;
+// The speed takes hold at once, even halfway through a glide.
+document.getElementById("dia-speed").onchange = e => { PLAY.speed = Number(e.target.value); try { localStorage.setItem("vc-speed", e.target.value); } catch {} };
+try { const v = localStorage.getItem("vc-speed"); if (v && document.querySelector(`#dia-speed option[value="${v}"]`)){ document.getElementById("dia-speed").value = v; PLAY.speed = Number(v); } } catch {}
+document.getElementById("codepane").addEventListener("wheel", () => { if (!PLAY.paused) stopPlay(); }, {passive: true});
+document.getElementById("dia").addEventListener("click", e => { if (e.target.id === "dia") e.target.close(); });
+
+/* ── live: the server reads the package again once its files settle; the page follows ── */
+async function poll(){
+  try {
+    const v = await (await fetch("/version", {cache: "no-store"})).json();
+    const live = document.getElementById("live"), err = document.getElementById("err");
+    if (v.error){ live.classList.add("err"); document.getElementById("live-text").textContent = "a file does not parse"; err.hidden = false; document.getElementById("err-text").textContent = v.error; }
+    else { live.classList.remove("err"); err.hidden = true; }
+    if (v.version !== VERSION){
+      VERSION = v.version;
+      G = await (await fetch("/graph.json", {cache: "no-store"})).json();
+      render();
+      for (const k in SOURCES) delete SOURCES[k];
+      if (FIRST){ FIRST = false; fromHash(); }
+      else if (document.getElementById("dia").open && DIA.mode === "story"){ if (!PLAY.on){ const f = G.findings.find(x => x.id === STORY.f.id); if (f){ STORY.f = f; STORY.tale = STORIES[f.check](f); STORY.at = Math.min(STORY.at, STORY.tale.stations.length - 1); drawStory(); } } }
+      else if (document.getElementById("dia").open && DIA.mode === "trace" && TRACE.flow){ if (!PLAY.on && TRACE.flow.every(id => S(id))){ setTrace(TRACE.flow.length === 1 ? traceFrom(TRACE.flow[0]) : traceAlong(TRACE.flow)); drawTrace(); } }
+      else if (document.getElementById("dia").open && DIA.mode === "trace"){ const h = G.hops.find(x => x.entry === TRACE.entry); if (h){ stopPlay(); TRACE.call = null; setTrace(h.tree); drawTrace(); } }
+      else if (document.getElementById("dia").open && DIA.mode === "symbol" && S(DIA.symbol)){ const view = DIA.view, open = DIA.open; openSymbol(DIA.symbol); DIA.view = view; DIA.open = open; showView(); }
+      if (!v.error) document.getElementById("live-text").textContent = "live · read " + v.at;
+    }
+    // A cue from the CLI (`vibecheck play`): the first one seen on load is old news, every later one plays.
+    if (CUE === null) CUE = v.cue;
+    else if (v.cue !== CUE){ CUE = v.cue; if (G) openFlow(v.flow, true); }
+  } catch { document.getElementById("live").classList.add("err"); document.getElementById("live-text").textContent = "server stopped"; }
+  setTimeout(poll, 700);
+}
+poll();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+[project]
+name = "vibecheck"
+version = "0.1.0"
+description = "The findings and the score of a Python package, from nothing but its source: no baseline, no generated files."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = []
+
+[project.scripts]
+vibecheck = "vibecheck.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["vibecheck"]
