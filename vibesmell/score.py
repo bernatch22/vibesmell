@@ -2,8 +2,8 @@
 
 from dataclasses import dataclass
 
-from vibecheck.finding import Finding
-from vibecheck.graph import Package
+from vibesmell.finding import Finding
+from vibesmell.graph import Package
 
 # The rule the hops are measured against, and the hops at which an entrypoint scores nothing.
 MOST_HOPS = 3

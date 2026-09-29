@@ -1,5 +1,5 @@
-"""What a project tells vibecheck: the package, its language, and the rules it sets: `[tool.vibecheck]` in
-pyproject.toml for Python, the `vibecheck` key of package.json for TypeScript."""
+"""What a project tells vibesmell: the package, its language, and the rules it sets: `[tool.vibesmell]` in
+pyproject.toml for Python, the `vibesmell` key of package.json for TypeScript."""
 
 import json
 import sys
@@ -52,7 +52,7 @@ def project_for(given: str | None) -> Project:
     if pyproject:
         try:
             parsed = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-            settings = parsed.get("tool", {}).get("vibecheck", {})
+            settings = parsed.get("tool", {}).get("vibesmell", {})
             scripts = parsed.get("project", {}).get("scripts", {})
         except (OSError, ValueError):
             pass
@@ -79,12 +79,12 @@ def _is_typescript(package_dir: Path) -> bool:
 
 
 def _typescript_project(package_dir: Path) -> Project:
-    """A TypeScript project: its doors come from package.json's `main` and `exports`, its rules from its `vibecheck` key."""
+    """A TypeScript project: its doors come from package.json's `main` and `exports`, its rules from its `vibesmell` key."""
     manifest = _up_to(package_dir, "package.json")
     settings: dict[str, object] = {}
     if manifest:
         try:
-            found = json.loads(manifest.read_text(encoding="utf-8")).get("vibecheck", {})
+            found = json.loads(manifest.read_text(encoding="utf-8")).get("vibesmell", {})
             settings = found if isinstance(found, dict) else {}
         except (OSError, ValueError):
             pass
@@ -108,7 +108,7 @@ def _skips(value: object) -> list[Skip]:
     found: list[Skip] = []
     for row in value:
         if not isinstance(row, dict) or not row.get("path") or not row.get("why"):
-            sys.exit("vibecheck: every [[tool.vibecheck.skip]] needs a `path`, the `checks` it skips, and a `why`")
+            sys.exit("vibesmell: every [[tool.vibesmell.skip]] needs a `path`, the `checks` it skips, and a `why`")
         found.append(Skip(str(row["path"]), frozenset(_strings(row.get("checks"))), str(row["why"])))
     return found
 
@@ -136,5 +136,5 @@ def _find_package(cwd: Path) -> Path:
     ]
     if len(candidates) != 1:
         names = ", ".join(sorted(c.name for c in candidates)) or "none"
-        sys.exit(f"vibecheck: say which package to read (found: {names})")
+        sys.exit(f"vibesmell: say which package to read (found: {names})")
     return candidates[0].resolve()

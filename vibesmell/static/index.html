@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>vibecheck</title>
+<title>vibesmell</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -200,7 +200,7 @@ svg.tree marker path{fill:var(--faint)}
 </head>
 <body>
 <header class="top"><div class="top-in">
-  <span class="brand">vibecheck<small id="pkg"></small></span>
+  <span class="brand">vibesmell<small id="pkg"></small></span>
   <span class="counts" id="counts"></span>
   <form id="play-form" class="playf"><input id="play-q" type="search" placeholder="Play a flow: handle_request  or  handle_request > open_session > save" autocomplete="off"><button class="sbtn" type="submit">Play</button></form>
   <span class="live" id="live"><span class="dot"></span><span id="live-text">connecting</span></span>
@@ -288,7 +288,7 @@ function renderFindings(){
 /* ── doors: every entrypoint, deepest first; one click reads its whole trace ── */
 function chainHtml(path){ return `<div class="chain">${path.map(id => symButton(id)).join('<span class="to">→</span>')}</div>`; }
 function renderDoors(){
-  if (!G.hops.length) return `<section><h2 class="group-h">Doors</h2><p class="hint">No entrypoints found. A routed function (<code>@app.get</code>…) or a <code>[project.scripts]</code> target is one; name others in <code>[tool.vibecheck] entries</code>.</p></section>`;
+  if (!G.hops.length) return `<section><h2 class="group-h">Doors</h2><p class="hint">No entrypoints found. A routed function (<code>@app.get</code>…) or a <code>[project.scripts]</code> target is one; name others in <code>[tool.vibesmell] entries</code>.</p></section>`;
   const shown = G.hops.slice(0, state.doors), rest = G.hops.length - shown.length;
   return `<section><h2 class="group-h">Doors<span class="why">every entrypoint, deepest first; the shape to keep is the door, one function of the domain, the library (${G.mostHops} hops). Click one to read its whole trace, and animate it.</span></h2>
     <div class="stack">${shown.map(h => `<div class="door ${h.hops > G.mostHops ? "over" : ""}" data-trace="${esc(h.entry)}"><div class="head"><span class="pill ${h.hops > G.mostHops ? "bad" : "ok"}">${h.hops} hops</span>${symButton(h.entry)}<span class="where">${esc(file(h.entry.split(":")[0]))}</span><span class="open">trace →</span></div>${chainHtml(h.path)}</div>`).join("")}
@@ -978,7 +978,7 @@ async function poll(){
       else if (document.getElementById("dia").open && DIA.mode === "symbol" && S(DIA.symbol)){ const view = DIA.view, open = DIA.open; openSymbol(DIA.symbol); DIA.view = view; DIA.open = open; showView(); }
       if (!v.error) document.getElementById("live-text").textContent = "live · read " + v.at;
     }
-    // A cue from the CLI (`vibecheck play`): the first one seen on load is old news, every later one plays.
+    // A cue from the CLI (`vibesmell play`): the first one seen on load is old news, every later one plays.
     if (CUE === null) CUE = v.cue;
     else if (v.cue !== CUE){ CUE = v.cue; if (G) openFlow(v.flow, true); }
   } catch { document.getElementById("live").classList.add("err"); document.getElementById("live-text").textContent = "server stopped"; }

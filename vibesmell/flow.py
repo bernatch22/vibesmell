@@ -3,7 +3,7 @@
 import sys
 from collections import deque
 
-from vibecheck.graph import Package
+from vibesmell.graph import Package
 
 
 def _resolve(package: Package, name: str) -> str:
@@ -15,8 +15,8 @@ def _resolve(package: Package, name: str) -> str:
     if len(matches) == 1:
         return matches[0]
     if not matches:
-        sys.exit(f"vibecheck: no function named {name}")
-    sys.exit(f"vibecheck: {len(matches)} functions match {name}; say which: " + ", ".join(matches[:8]))
+        sys.exit(f"vibesmell: no function named {name}")
+    sys.exit(f"vibesmell: {len(matches)} functions match {name}; say which: " + ", ".join(matches[:8]))
 
 
 def flow(package: Package, names: list[str]) -> list[str]:
@@ -26,7 +26,7 @@ def flow(package: Package, names: list[str]) -> list[str]:
     for start, end in zip(stops, stops[1:], strict=False):
         leg = _shortest(package, start, end)
         if leg is None:
-            sys.exit(f"vibecheck: no path of the package's own calls from {_short(start)} to {_short(end)}")
+            sys.exit(f"vibesmell: no path of the package's own calls from {_short(start)} to {_short(end)}")
         path += leg[1:]
     return path
 

@@ -2,9 +2,9 @@
 
 import dataclasses
 
-from vibecheck import graph, ts_reader
-from vibecheck.graph import Package
-from vibecheck.project import Project
+from vibesmell import graph, ts_reader
+from vibesmell.graph import Package
+from vibesmell.project import Project
 
 
 def package_of(project: Project) -> Package:

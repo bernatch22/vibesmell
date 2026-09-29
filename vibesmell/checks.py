@@ -8,13 +8,13 @@ import collections
 import fnmatch
 import itertools
 
-from vibecheck.facts import Arg, Call
-from vibecheck.finding import Finding
-from vibecheck.graph import Package
-from vibecheck.nodes import folder, is_dunder, short
-from vibecheck.project import Project, Skip
-from vibecheck.smells import duplicates, feature_envy, ignored_returns, scattered_apis, single_implementations, unstable_dependencies, unused_defaults, unused_params
-from vibecheck.structure import cycles, forbidden, hubs, layers, shotgun
+from vibesmell.facts import Arg, Call
+from vibesmell.finding import Finding
+from vibesmell.graph import Package
+from vibesmell.nodes import folder, is_dunder, short
+from vibesmell.project import Project, Skip
+from vibesmell.smells import duplicates, feature_envy, ignored_returns, scattered_apis, single_implementations, unstable_dependencies, unused_defaults, unused_params
+from vibesmell.structure import cycles, forbidden, hubs, layers, shotgun
 
 # A value handed through two functions is composition; through three it is carried for nothing.
 TUNNEL_CROSSINGS = 3

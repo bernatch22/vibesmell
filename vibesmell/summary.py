@@ -1,10 +1,10 @@
 """The whole report as one Markdown text an agent can read and act on."""
 
-from vibecheck.checks import CHECKS
-from vibecheck.finding import Finding
-from vibecheck.graph import Package
-from vibecheck.project import Project, Skip
-from vibecheck.score import MOST_HOPS, score
+from vibesmell.checks import CHECKS
+from vibesmell.finding import Finding
+from vibesmell.graph import Package
+from vibesmell.project import Project, Skip
+from vibesmell.score import MOST_HOPS, score
 
 # The deepest doors worth naming: past these the list is the page's job.
 DOORS_NAMED = 8
@@ -13,7 +13,7 @@ DOORS_NAMED = 8
 def summary(package: Package, found: list[Finding], excused: list[tuple[Skip, list[Finding]]], project: Project) -> str:
     """The score, every finding under its check's note, the skips, the deepest doors, and how to check again."""
     card = score(package, found)
-    lines = [f"# vibecheck: {package.name}", ""]
+    lines = [f"# vibesmell: {package.name}", ""]
     lines.append(f"{len(package.modules)} modules, {sum(1 for s in package.symbols.values() if s.kind in ('function', 'method'))} functions. Score **{card['overall']}** of 100.")
     lines.append("")
     for a in card["attributes"]:
@@ -48,5 +48,5 @@ def summary(package: Package, found: list[Finding], excused: list[tuple[Skip, li
             lines.append(f"- {h['hops']} hops: {' → '.join(path)}")
     if project.layers:
         lines += ["", f"Layers, bottom up: {' < '.join(project.layers)}."]
-    lines += ["", "Check again with `vibecheck check`; it exits 1 while anything is left.", ""]
+    lines += ["", "Check again with `vibesmell check`; it exits 1 while anything is left.", ""]
     return "\n".join(lines)

@@ -1,8 +1,0 @@
-{
-  "name": "vibecheck-ts-reader",
-  "private": true,
-  "description": "TypeScript's reader of facts for vibecheck: TypeScript 6, the last with a compiler API, until 7.1 brings one.",
-  "dependencies": {
-    "typescript": "6.0.3"
-  }
-}

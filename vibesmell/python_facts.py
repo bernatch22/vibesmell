@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 
-from vibecheck.facts import Arg, Call, ClassFacts, Facts, FunctionFacts, LibraryCall
+from vibesmell.facts import Arg, Call, ClassFacts, Facts, FunctionFacts, LibraryCall
 
 # A body this small is a one-liner, and two alike are a pattern, not a copy.
 SHAPE_NODES = 40

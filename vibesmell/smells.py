@@ -5,10 +5,10 @@ what moves more, a method that works on another's data, an abstraction with one 
 
 import collections
 
-from vibecheck.facts import Call, FunctionFacts
-from vibecheck.finding import Finding
-from vibecheck.graph import Package
-from vibecheck.nodes import folder, is_dunder, short
+from vibesmell.facts import Call, FunctionFacts
+from vibesmell.finding import Finding
+from vibesmell.graph import Package
+from vibesmell.nodes import folder, is_dunder, short
 
 # A library called raw from this many modules, in this many folders, wants one module of ours in front.
 SCATTERED_MODULES = 5

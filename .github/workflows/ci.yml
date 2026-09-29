@@ -1,4 +1,4 @@
-# The gates: lint, vibecheck on itself, a TypeScript project read end to end, and the package built.
+# The gates: lint, vibesmell on itself, a TypeScript project read end to end, and the package built.
 # Called on every push and pull request, and by release.yml before anything is published.
 name: ci
 
@@ -25,8 +25,8 @@ jobs:
           node-version: 22
       - name: lint
         run: uvx ruff check .
-      - name: vibecheck finds nothing to fix in itself
-        run: uv run --no-project --with . vibecheck check vibecheck
+      - name: vibesmell finds nothing to fix in itself
+        run: uv run --no-project --with . vibesmell check vibesmell
       - name: a TypeScript project is read end to end
         run: |
           mkdir -p /tmp/ts-fixture/src
@@ -35,7 +35,7 @@ jobs:
           printf '{"compilerOptions":{"strict":true,"module":"NodeNext","moduleResolution":"NodeNext","target":"ES2022"},"include":["src"]}' > tsconfig.json
           printf 'import { twice } from "./math.js";\nexport function run(x: number): number { return twice(x); }\n' > src/index.ts
           printf 'export function twice(x: number): number { return x * 2; }\nexport function unused(): number { return 1; }\n' > src/math.ts
-          set +e; uv run --no-project --with "$GITHUB_WORKSPACE" vibecheck check > out.txt 2>&1; code=$?; set -e
+          set +e; uv run --no-project --with "$GITHUB_WORKSPACE" vibesmell check > out.txt 2>&1; code=$?; set -e
           cat out.txt
           test "$code" = 1
           grep -q '\[dead\].*unused' out.txt

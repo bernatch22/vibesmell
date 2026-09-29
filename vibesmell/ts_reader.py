@@ -8,9 +8,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from vibecheck.facts import Arg, Call, ClassFacts, Facts, FunctionFacts, LibraryCall
-from vibecheck.graph import Module, Package, Symbol, hops_of, layers_of
-from vibecheck.history import co_changes
+from vibesmell.facts import Arg, Call, ClassFacts, Facts, FunctionFacts, LibraryCall
+from vibesmell.graph import Module, Package, Symbol, hops_of, layers_of
+from vibesmell.history import co_changes
 
 READER = Path(__file__).parent / "ts" / "reader.cjs"
 
@@ -58,20 +58,20 @@ def _project_dir(package_dir: Path) -> Path:
     for directory in [package_dir, *package_dir.parents]:
         if (directory / "package.json").exists() and (directory / "tsconfig.json").exists():
             return directory
-    sys.exit(f"vibecheck: no package.json with a tsconfig.json beside it above {package_dir}")
+    sys.exit(f"vibesmell: no package.json with a tsconfig.json beside it above {package_dir}")
 
 
 def _run(project_dir: Path, package_dir: Path) -> str:
     """Run the reader, installing its TypeScript first when it is not there yet."""
     node = shutil.which("node")
     if node is None:
-        sys.exit("vibecheck: reading TypeScript needs node on the PATH")
+        sys.exit("vibesmell: reading TypeScript needs node on the PATH")
     if not (READER.parent / "node_modules" / "typescript").exists():
-        npm = shutil.which("npm") or sys.exit("vibecheck: reading TypeScript needs npm, once, to install its TypeScript")
+        npm = shutil.which("npm") or sys.exit("vibesmell: reading TypeScript needs npm, once, to install its TypeScript")
         subprocess.run([npm, "install", "--silent", "--no-audit", "--no-fund"], cwd=READER.parent, check=True)
     done = subprocess.run([node, str(READER), str(project_dir), str(package_dir)], capture_output=True, text=True, check=False)
     if done.returncode != 0:
-        sys.exit(f"vibecheck: the TypeScript reader failed:\n{done.stderr.strip()[-2000:]}")
+        sys.exit(f"vibesmell: the TypeScript reader failed:\n{done.stderr.strip()[-2000:]}")
     return done.stdout
 
 

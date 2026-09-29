@@ -2,9 +2,9 @@
 
 import statistics
 
-from vibecheck.finding import Finding
-from vibecheck.graph import Package
-from vibecheck.nodes import folder
+from vibesmell.finding import Finding
+from vibesmell.graph import Package
+from vibesmell.nodes import folder
 
 # A hub is imported by this many, imports this many, exports this many, and each importer uses this share.
 HUB_DEGREE = 10

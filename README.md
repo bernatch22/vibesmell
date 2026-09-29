@@ -1,6 +1,6 @@
-# vibecheck
+# vibesmell
 
-**The smells a linter can't see, because they live between files.** vibecheck reads a Python
+**The smells a linter can't see, because they live between files.** vibesmell reads a Python
 package or a TypeScript project whole, resolves who calls what down to the method, and reports
 the indirection and the work for nobody that code written fast leaves behind: functions that only
 forward, parameters carried through three functions unread, the same body written twice, values
@@ -16,20 +16,19 @@ is. Standard library only for Python; TypeScript needs `node`.
 ## Try it
 
 ```
-uvx --from vibecheck-cli vibecheck score    # six attributes from 0 to 100
-uvx --from vibecheck-cli vibecheck check    # every finding; exit 1 when there is one
-uvx --from vibecheck-cli vibecheck serve    # the page, at http://127.0.0.1:8765
+uvx --from vibesmell vibesmell score    # six attributes from 0 to 100
+uvx --from vibesmell vibesmell check    # every finding; exit 1 when there is one
+uvx --from vibesmell vibesmell serve    # the page, at http://127.0.0.1:8765
 ```
 
 Run it in a project: it finds the one package under the current directory (or `src/` beside a
-`tsconfig.json`), or name it: `vibecheck check src/mypkg`. Or install it for good:
-`uv tool install vibecheck-cli` (or `pipx install vibecheck-cli`). The PyPI name is `vibecheck-cli`;
-the command it installs is `vibecheck`.
+`tsconfig.json`), or name it: `vibesmell check src/mypkg`. Or install it for good:
+`uv tool install vibesmell` (or `pipx install vibesmell`).
 
 ## What it looks like: pipecat
 
 [pipecat](https://github.com/pipecat-ai/pipecat), the open-source framework for voice and multimodal
-agents, read as a library (`vibecheck serve src/pipecat --library`, every public name a door, since the
+agents, read as a library (`vibesmell serve src/pipecat --library`, every public name a door, since the
 code that calls it lives in its users' projects): 472 modules, 6186 functions, 5693 symbols, read in
 about twelve seconds. It scores **84**. Almost nothing is dead, and little work is done for nobody;
 what pulls the score down is size, Focused at 43: 522 functions over 50 lines and 116 modules over
@@ -54,7 +53,7 @@ A score is read from one commit of pipecat, on the day of the screenshots; run i
 
 ## The page
 
-`vibecheck serve` shows one column: the score, every finding under its check's note, and the doors,
+`vibesmell serve` shows one column: the score, every finding under its check's note, and the doors,
 every entrypoint deepest first. Click a door to read its whole trace, step by step, with the code of
 each step beside it; **Animate** reads the trace the way the code reads. Click any function for who
 uses it, what it calls (a tree opened box by box) and every door that reaches it. The page reads the
@@ -111,9 +110,9 @@ get that commit's score.
 ## Play a flow
 
 ```
-vibecheck play handle_request                          # everything under one function, animated
-vibecheck play handle_request open_session Log.append  # one flow: from the first, through the second, to the last
-vibecheck play handle_request open_session Log.append --text   # the same as lines, for a terminal or an agent
+vibesmell play handle_request                          # everything under one function, animated
+vibesmell play handle_request open_session Log.append  # one flow: from the first, through the second, to the last
+vibesmell play handle_request open_session Log.append --text   # the same as lines, for a terminal or an agent
 ```
 
 Any function of the package, not only a door: `handle_request`, `Store.append`, or `log.store:Store.append`
@@ -124,7 +123,7 @@ browser) when it is not. The link it prints reproduces the flow, `#play=a>b>c`, 
 This is the path the code allows, read from the source; it is not a trace of one run.
 
 ```
-vibecheck reach Log.append     # every entrypoint that reaches a function, shortest chain first
+vibesmell reach Log.append     # every entrypoint that reaches a function, shortest chain first
 ```
 
 On the page, a function's panel lists the same doors, each one a click from playing its flow, and
@@ -166,18 +165,18 @@ it describes, the rest play everything under the function.
 ## How it reads a package
 
 A reader turns a language's syntax into facts, and the checks read only the facts
-(`vibecheck/facts.py`): each call (its name, where, what it gives for each argument, whether its
+(`vibesmell/facts.py`): each call (its name, where, what it gives for each argument, whether its
 value is kept), each function (its parameters and defaults, which it reads and which it only hands
 on, whether its body is one call, whether it starts by testing a flag, the shape of its body), each
 class (its fields, its bases, whether one is a library's), and the module imports. Python's reader
 is `python_facts.py` beside `graph.py`; a reader for another language fills the same facts and every
 check, the score and the page work unchanged.
 
-**TypeScript** is read by `vibecheck/ts/reader.cjs`, with TypeScript's own compiler and checker, so
+**TypeScript** is read by `vibesmell/ts/reader.cjs`, with TypeScript's own compiler and checker, so
 `x.m()` reaches the method `m` of the type `x` has instead of a guess. It needs `node`; the first
 run installs TypeScript 6 beside the reader (TypeScript 7, the Go compiler, has no API until 7.1).
 A folder is TypeScript when it has no `__init__.py`, holds `.ts` files and has a `tsconfig.json`
-above it; run from a project with a `tsconfig.json` and a `src/`, `vibecheck check` reads `src/`.
+above it; run from a project with a `tsconfig.json` and a `src/`, `vibesmell check` reads `src/`.
 
 What changes with the language:
 
@@ -190,15 +189,15 @@ What changes with the language:
 - **Returns** are read from the checker's return type: `void`, `undefined`, `never` and
   `Promise<void>` return nothing, and `this` is a fluent interface.
 - **Tests** are the files under `test/`, `tests/` or `__tests__/`, and any `*.test.ts` or `*.spec.ts`.
-- **Rules** go under a `vibecheck` key in `package.json`, with the same names as `[tool.vibecheck]`.
+- **Rules** go under a `vibesmell` key in `package.json`, with the same names as `[tool.vibesmell]`.
 
 ## The rules of a project
 
-Everything a project says lives in `pyproject.toml`, under `[tool.vibecheck]`. None of it is
+Everything a project says lives in `pyproject.toml`, under `[tool.vibesmell]`. None of it is
 required.
 
 ```toml
-[tool.vibecheck]
+[tool.vibesmell]
 # Where the world comes in, beyond routed functions and [project.scripts]: never dead, the hops start here.
 entries = ["process_frame"]
 # Symbols never reported dead: a plugin hook, a name exported for others.
@@ -211,11 +210,11 @@ sinks = ["Log.append", "Mailer.send"]
 layers = ["domain", "store", "service", "api"]
 
 # What a folder may not import, of the package or from outside.
-[tool.vibecheck.forbid]
+[tool.vibesmell.forbid]
 domain = ["httpx", "asyncpg", "myapp.api"]
 
 # What a folder is excused from. The why is required, and printed every run: a skip is never silent.
-[[tool.vibecheck.skip]]
+[[tool.vibesmell.skip]]
 path = "myapp/wire/**"
 checks = ["forward"]
 why = "the wire mirrors the domain on purpose"
@@ -226,21 +225,21 @@ What there is not: a way to accept one finding by its id. That is a baseline wit
 ## For an agent
 
 ```
-vibecheck summary          # the whole report as Markdown: score, every finding under its check's note, skips, deepest doors
-vibecheck check --json     # the findings and what the skips hid, as one object
-vibecheck score --json     # the six attributes
+vibesmell summary          # the whole report as Markdown: score, every finding under its check's note, skips, deepest doors
+vibesmell check --json     # the findings and what the skips hid, as one object
+vibesmell score --json     # the six attributes
 ```
 
 ## The Claude Code hook
 
 ```
-vibecheck install-hook             # in ~/.claude/settings.json, every project
-vibecheck install-hook --project   # in ./.claude/settings.json, this one
-vibecheck install-hook --dir ~/.claude-work
-vibecheck uninstall-hook           # the same flags; takes out only this hook
+vibesmell install-hook             # in ~/.claude/settings.json, every project
+vibesmell install-hook --project   # in ./.claude/settings.json, this one
+vibesmell install-hook --dir ~/.claude-work
+vibesmell uninstall-hook           # the same flags; takes out only this hook
 ```
 
-After every save of a Python or TypeScript file (Edit, Write, MultiEdit), Claude Code hears what vibecheck
+After every save of a Python or TypeScript file (Edit, Write, MultiEdit), Claude Code hears what vibesmell
 finds in that file: the new findings, each with its fix, and what the save fixed. It only talks:
 the file is saved, nothing is blocked, and a file that does not parse yet is left alone. What was
 already said about a file is not said again. There is no Stop hook.

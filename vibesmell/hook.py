@@ -1,4 +1,4 @@
-"""The Claude Code hook: after every save of a Python file, what vibecheck finds in it now.
+"""The Claude Code hook: after every save of a Python file, what vibesmell finds in it now.
 
 It only talks. The file is saved, the edit stands, nothing is blocked; the agent reads the note
 with the next step. What was already said about a file is not said again, and what an edit fixed
@@ -11,11 +11,11 @@ import sys
 import tempfile
 from pathlib import Path
 
-from vibecheck.checks import findings
-from vibecheck.graph import Package
-from vibecheck.history import SOURCES
-from vibecheck.project import SKIPPED_DIRS, project_for
-from vibecheck.reading import package_of
+from vibesmell.checks import findings
+from vibesmell.graph import Package
+from vibesmell.history import SOURCES
+from vibesmell.project import SKIPPED_DIRS, project_for
+from vibesmell.reading import package_of
 
 MATCHER = "Edit|Write|MultiEdit"
 # A note longer than this is the summary's job, not a save's.
@@ -75,12 +75,12 @@ def _note(package_dir: Path, saved: Path) -> str:
     _tell(package_dir, file, set(now))
     lines: list[str] = []
     if new:
-        lines.append(f"vibecheck: {len(new)} new in {file}. The file is saved; fix them in the next edit, or say why one is wrong:")
+        lines.append(f"vibesmell: {len(new)} new in {file}. The file is saved; fix them in the next edit, or say why one is wrong:")
         lines += [f"  {r['file']}:{r['line']}  [{r['check']}] {r['message']}  Fix: {r['fix']}" for r in new[:MOST_LINES]]
         if len(new) > MOST_LINES:
-            lines.append(f"  ... and {len(new) - MOST_LINES} more: vibecheck check")
+            lines.append(f"  ... and {len(new) - MOST_LINES} more: vibesmell check")
     if fixed:
-        lines.append(f"vibecheck: this edit fixed {len(fixed)} in {file}: " + ", ".join(k.split(":", 1)[0] for k in fixed[:MOST_LINES]) + ".")
+        lines.append(f"vibesmell: this edit fixed {len(fixed)} in {file}: " + ", ".join(k.split(":", 1)[0] for k in fixed[:MOST_LINES]) + ".")
     return "\n".join(lines)
 
 
@@ -93,7 +93,7 @@ def _files_of(package: Package, row: dict[str, object]) -> set[str]:
 
 def _memory(package_dir: Path, file: str) -> Path:
     key = hashlib.sha1(f"{package_dir}:{file}".encode()).hexdigest()[:16]
-    return Path(tempfile.gettempdir()) / "vibecheck" / f"{key}.json"
+    return Path(tempfile.gettempdir()) / "vibesmell" / f"{key}.json"
 
 
 def _told(package_dir: Path, file: str) -> set[str]:
@@ -120,12 +120,12 @@ def install(settings_path: Path) -> str:
     except ValueError:
         return f"{settings_path} is not valid JSON; nothing written"
     after = settings.setdefault("hooks", {}).setdefault("PostToolUse", [])
-    if any("vibecheck" in json.dumps(entry) and " hook" in json.dumps(entry) for entry in after):
+    if any("vibesmell" in json.dumps(entry) and " hook" in json.dumps(entry) for entry in after):
         return f"already installed in {settings_path}"
     after.append({"matcher": MATCHER, "hooks": [{"type": "command", "command": _command(), "timeout": 30}]})
     settings_path.parent.mkdir(parents=True, exist_ok=True)
     settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
-    return f"installed in {settings_path}: after every save of a Python file, Claude Code hears what vibecheck finds in it"
+    return f"installed in {settings_path}: after every save of a Python file, Claude Code hears what vibesmell finds in it"
 
 
 def uninstall(settings_path: Path) -> str:
@@ -136,7 +136,7 @@ def uninstall(settings_path: Path) -> str:
         return f"nothing to remove in {settings_path}"
     hooks = settings.get("hooks", {})
     after = hooks.get("PostToolUse", [])
-    kept = [entry for entry in after if not ("vibecheck" in json.dumps(entry) and " hook" in json.dumps(entry))]
+    kept = [entry for entry in after if not ("vibesmell" in json.dumps(entry) and " hook" in json.dumps(entry))]
     if len(kept) == len(after):
         return f"nothing to remove in {settings_path}"
     if kept:
@@ -152,4 +152,4 @@ def uninstall(settings_path: Path) -> str:
 def _command() -> str:
     """The hook line: this very executable by its absolute path, so PATH does not matter."""
     executable = Path(sys.argv[0]).resolve()
-    return f"{executable} hook" if executable.name == "vibecheck" else "vibecheck hook"
+    return f"{executable} hook" if executable.name == "vibesmell" else "vibesmell hook"

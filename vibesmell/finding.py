@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from vibecheck.graph import Package
+from vibesmell.graph import Package
 
 
 @dataclass(frozen=True)

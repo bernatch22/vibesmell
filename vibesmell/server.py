@@ -11,13 +11,13 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from vibecheck.checks import CHECKS, findings
-from vibecheck.finding import Finding
-from vibecheck.graph import Package
-from vibecheck.history import SOURCES
-from vibecheck.project import Project, Skip
-from vibecheck.reading import package_of
-from vibecheck.score import MOST_HOPS, score
+from vibesmell.checks import CHECKS, findings
+from vibesmell.finding import Finding
+from vibesmell.graph import Package
+from vibesmell.history import SOURCES
+from vibesmell.project import Project, Skip
+from vibesmell.reading import package_of
+from vibesmell.score import MOST_HOPS, score
 
 PAGE = Path(__file__).parent / "static" / "index.html"
 # How often the files are looked at, and how long they must stay still before the package is read
@@ -142,7 +142,7 @@ def serve(project: Project, host: str, port: int) -> None:
             elif path == "/version":
                 with watched.lock:
                     state = {
-                        "tool": "vibecheck", "package": str(package_dir),
+                        "tool": "vibesmell", "package": str(package_dir),
                         "version": watched.version, "error": watched.error, "at": watched.at, "cue": watched.cue_id, "flow": watched.cue,
                     }
                 self._send(json.dumps(state).encode(), "application/json")
@@ -206,7 +206,7 @@ def serve(project: Project, host: str, port: int) -> None:
             return
 
     server = ThreadingHTTPServer((host, port), Handler)
-    print(f"vibecheck: {project.package_dir} at http://{host}:{port}")
+    print(f"vibesmell: {project.package_dir} at http://{host}:{port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

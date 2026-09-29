@@ -1,4 +1,4 @@
-"""vibecheck: the findings and the score of a Python package, from nothing but its source."""
+"""vibesmell: the findings and the score of a Python package, from nothing but its source."""
 
 import argparse
 import dataclasses
@@ -11,19 +11,19 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
-from vibecheck import hook
-from vibecheck.checks import CHECKS, findings
-from vibecheck.flow import flow, reaching, text
-from vibecheck.project import project_for
-from vibecheck.reading import package_of
-from vibecheck.score import score
-from vibecheck.server import serve
-from vibecheck.summary import summary
+from vibesmell import hook
+from vibesmell.checks import CHECKS, findings
+from vibesmell.flow import flow, reaching, text
+from vibesmell.project import project_for
+from vibesmell.reading import package_of
+from vibesmell.score import score
+from vibesmell.server import serve
+from vibesmell.summary import summary
 
 
 def main(argv: list[str] | None = None) -> int:
     """The command line: `check`, `score`, `summary`, `serve`, and the Claude Code hook."""
-    parser = argparse.ArgumentParser(prog="vibecheck", description=__doc__)
+    parser = argparse.ArgumentParser(prog="vibesmell", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("hook", help="Run as Claude Code's PostToolUse hook: reads its JSON on stdin.")
     for name, doc in (("install-hook", "Add the hook to Claude Code's settings."), ("uninstall-hook", "Take the hook out of Claude Code's settings.")):
@@ -70,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
         paths = reaching(package, args.name)
         for path in paths:
             print(f"{len(path) - 1:2} hops  " + " → ".join(p.split(":", 1)[1] for p in path))
-        print(f"vibecheck: {len(paths)} entrypoints reach it; play one with: vibecheck play <entry> {args.name}", file=sys.stderr)
+        print(f"vibesmell: {len(paths)} entrypoints reach it; play one with: vibesmell play <entry> {args.name}", file=sys.stderr)
         return 0
     if args.command == "play":
         return _play(project, args.names, args.port, as_text=args.text)
@@ -105,12 +105,12 @@ def _play(project, names: list[str], port: int, *, as_text: bool) -> int:
             if _listening(url) is not None:
                 break
         else:
-            sys.exit(f"vibecheck: the page did not come up at {url}")
+            sys.exit(f"vibesmell: the page did not come up at {url}")
         webbrowser.open(link)
-    elif there.get("tool") != "vibecheck":
-        sys.exit(f"vibecheck: port {port} is taken by a server that is not vibecheck (another tool's server?). Stop it, or pass --port.")
+    elif there.get("tool") != "vibesmell":
+        sys.exit(f"vibesmell: port {port} is taken by a server that is not vibesmell (another tool's server?). Stop it, or pass --port.")
     elif there.get("package") != str(project.package_dir.resolve()):
-        sys.exit(f"vibecheck: the page at {url} shows {there.get('package')}, not {project.package_dir}. Stop it, or pass --port.")
+        sys.exit(f"vibesmell: the page at {url} shows {there.get('package')}, not {project.package_dir}. Stop it, or pass --port.")
     else:
         request = urllib.request.Request(url + "/play", data=json.dumps({"path": path}).encode(), headers={"Content-Type": "application/json"}, method="POST")
         urllib.request.urlopen(request, timeout=5).read()
@@ -137,11 +137,11 @@ def _check(found: list, excused: list, package, *, as_json: bool) -> int:
             print(f"{r['file']}:{r['line']}  [{r['check']}] {r['message']}  Fix: {r['fix']}")
         by_check = {c: sum(1 for r in rows if r["check"] == c) for c in CHECKS}
         summary = ", ".join(f"{n} {CHECKS[c][0].lower()}" for c, n in by_check.items() if n)
-        print(f"vibecheck: {summary or 'nothing to fix'}", file=sys.stderr)
+        print(f"vibesmell: {summary or 'nothing to fix'}", file=sys.stderr)
         # A skip is never silent: what it hides is counted out loud, with its reason, every run.
         for skip, hidden in excused:
             if hidden:
-                print(f"vibecheck: skipped {len(hidden)} in {skip.path}: {skip.why}", file=sys.stderr)
+                print(f"vibesmell: skipped {len(hidden)} in {skip.path}: {skip.why}", file=sys.stderr)
     return 1 if rows else 0
 
 

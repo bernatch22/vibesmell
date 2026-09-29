@@ -1,4 +1,4 @@
-# A tag vX.Y.Z publishes vibecheck-cli X.Y.Z to PyPI, after the gates pass, by Trusted Publishing:
+# A tag vX.Y.Z publishes vibesmell X.Y.Z to PyPI, after the gates pass, by Trusted Publishing:
 # no token anywhere. The tag must say the version the package declares.
 name: release
 
@@ -15,7 +15,7 @@ jobs:
       - name: the tag says the version the package declares
         if: github.ref_type == 'tag'
         run: |
-          declared=$(python3 -c "import re;print(re.search(r'__version__ = \"(.+?)\"', open('vibecheck/__init__.py').read()).group(1))")
+          declared=$(python3 -c "import re;print(re.search(r'__version__ = \"(.+?)\"', open('vibesmell/__init__.py').read()).group(1))")
           test "v$declared" = "$GITHUB_REF_NAME"
 
   gates:

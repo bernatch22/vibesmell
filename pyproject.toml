@@ -1,6 +1,5 @@
 [project]
-# `vibecheck` on PyPI is another project's; the command this installs is still `vibecheck`.
-name = "vibecheck-cli"
+name = "vibesmell"
 dynamic = ["version"]
 description = "The smells a linter can't see, because they live between files: indirection and work for nobody in Python and TypeScript."
 readme = "README.md"
@@ -20,22 +19,22 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/bernatch22/vibecheck"
-Source = "https://github.com/bernatch22/vibecheck"
-Changelog = "https://github.com/bernatch22/vibecheck/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/bernatch22/vibesmell"
+Source = "https://github.com/bernatch22/vibesmell"
+Changelog = "https://github.com/bernatch22/vibesmell/blob/main/CHANGELOG.md"
 
 [project.scripts]
-vibecheck = "vibecheck.cli:main"
+vibesmell = "vibesmell.cli:main"
 
 [build-system]
 requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "vibecheck/__init__.py"
+path = "vibesmell/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["vibecheck"]
+packages = ["vibesmell"]
 
 [tool.ruff]
 line-length = 200

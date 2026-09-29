@@ -7,9 +7,9 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from vibecheck.facts import Facts, FunctionFacts
-from vibecheck.history import CoChange, co_changes
-from vibecheck.python_facts import facts_of
+from vibesmell.facts import Facts, FunctionFacts
+from vibesmell.history import CoChange, co_changes
+from vibesmell.python_facts import facts_of
 
 # A decorator whose last name is one of these marks a function as an entrypoint: a web door.
 ENTRY_DECORATORS = frozenset({"get", "post", "put", "patch", "delete", "websocket", "route", "api_route"})

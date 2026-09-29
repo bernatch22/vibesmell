@@ -1,4 +1,4 @@
-// TypeScript's reader of facts for vibecheck: reads a project with TypeScript's own compiler and
+// TypeScript's reader of facts for vibesmell: reads a project with TypeScript's own compiler and
 // checker, and prints on stdout, as JSON, the same facts Python's reader gives the checks.
 //
 //   node reader.cjs <project dir> <source dir>
