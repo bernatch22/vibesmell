@@ -14,8 +14,8 @@ from pathlib import Path
 from vibecheck.checks import findings
 from vibecheck.graph import Package
 from vibecheck.history import SOURCES
-from vibecheck.reading import package_of
 from vibecheck.project import SKIPPED_DIRS, project_for
+from vibecheck.reading import package_of
 
 MATCHER = "Edit|Write|MultiEdit"
 # A note longer than this is the summary's job, not a save's.

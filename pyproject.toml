@@ -1,11 +1,28 @@
 [project]
-name = "vibecheck"
-version = "0.1.0"
-description = "The findings and the score of a Python package, from nothing but its source: no baseline, no generated files."
+# `vibecheck` on PyPI is another project's; the command this installs is still `vibecheck`.
+name = "vibecheck-cli"
+dynamic = ["version"]
+description = "The smells a linter can't see, because they live between files: indirection and work for nobody in Python and TypeScript."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
+authors = [{ name = "Bernardo Castro", email = "me@bernardocastro.dev" }]
+keywords = ["static-analysis", "code-smells", "call-graph", "refactoring", "typescript", "claude-code"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/bernatch22/vibecheck"
+Source = "https://github.com/bernatch22/vibecheck"
+Changelog = "https://github.com/bernatch22/vibecheck/blob/main/CHANGELOG.md"
 
 [project.scripts]
 vibecheck = "vibecheck.cli:main"
@@ -14,5 +31,14 @@ vibecheck = "vibecheck.cli:main"
 requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "vibecheck/__init__.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["vibecheck"]
+
+[tool.ruff]
+line-length = 200
+
+[tool.ruff.lint]
+select = ["E9", "F", "I"]

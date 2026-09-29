@@ -16,14 +16,15 @@ is. Standard library only for Python; TypeScript needs `node`.
 ## Try it
 
 ```
-uvx --from git+https://github.com/bernatch22/vibecheck vibecheck score    # six attributes from 0 to 100
-uvx --from git+https://github.com/bernatch22/vibecheck vibecheck check    # every finding; exit 1 when there is one
-uvx --from git+https://github.com/bernatch22/vibecheck vibecheck serve    # the page, at http://127.0.0.1:8765
+uvx --from vibecheck-cli vibecheck score    # six attributes from 0 to 100
+uvx --from vibecheck-cli vibecheck check    # every finding; exit 1 when there is one
+uvx --from vibecheck-cli vibecheck serve    # the page, at http://127.0.0.1:8765
 ```
 
 Run it in a project: it finds the one package under the current directory (or `src/` beside a
 `tsconfig.json`), or name it: `vibecheck check src/mypkg`. Or install it for good:
-`uv tool install git+https://github.com/bernatch22/vibecheck`.
+`uv tool install vibecheck-cli` (or `pipx install vibecheck-cli`). The PyPI name is `vibecheck-cli`;
+the command it installs is `vibecheck`.
 
 ## What it looks like: pipecat
 

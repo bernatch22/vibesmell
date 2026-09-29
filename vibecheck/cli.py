@@ -14,8 +14,8 @@ from pathlib import Path
 from vibecheck import hook
 from vibecheck.checks import CHECKS, findings
 from vibecheck.flow import flow, reaching, text
-from vibecheck.reading import package_of
 from vibecheck.project import project_for
+from vibecheck.reading import package_of
 from vibecheck.score import score
 from vibecheck.server import serve
 from vibecheck.summary import summary
