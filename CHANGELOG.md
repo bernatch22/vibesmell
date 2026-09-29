@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **The hook speaks only where it was asked to.** It stays silent unless the project declares
+  vibesmell: a `[tool.vibesmell]` table in `pyproject.toml` (empty is enough) or a `vibesmell` key
+  in `package.json`. Installed for every project, it used to talk in projects that never chose it.
+
 ## 0.1.0 — the smells a linter can't see
 
 The first release. vibesmell reads a Python package or a TypeScript project whole, resolves who

@@ -239,6 +239,10 @@ vibesmell install-hook --dir ~/.claude-work
 vibesmell uninstall-hook           # the same flags; takes out only this hook
 ```
 
+The hook speaks only in a project that says it uses vibesmell: a `[tool.vibesmell]` table in its
+`pyproject.toml` (an empty one is enough), or a `vibesmell` key in its `package.json`. Everywhere
+else it stays silent, so installing it for every project costs nothing where nobody asked for it.
+
 After every save of a Python or TypeScript file (Edit, Write, MultiEdit), Claude Code hears what vibesmell
 finds in that file: the new findings, each with its fix, and what the save fixed. It only talks:
 the file is saved, nothing is blocked, and a file that does not parse yet is left alone. What was

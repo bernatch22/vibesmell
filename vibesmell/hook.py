@@ -14,7 +14,7 @@ from pathlib import Path
 from vibesmell.checks import findings
 from vibesmell.graph import Package
 from vibesmell.history import SOURCES
-from vibesmell.project import SKIPPED_DIRS, project_for
+from vibesmell.project import SKIPPED_DIRS, project_for, uses_vibesmell
 from vibesmell.reading import package_of
 
 MATCHER = "Edit|Write|MultiEdit"
@@ -33,7 +33,8 @@ def run() -> int:
     if not isinstance(path, str) or not path.endswith(SOURCES):
         return 0
     package_dir = _package_of(Path(path))
-    if package_dir is None:
+    # Silent in a project that has not said it uses vibesmell: an agent working there never asked.
+    if package_dir is None or not uses_vibesmell(package_dir):
         return 0
     try:
         note = _note(package_dir, Path(path).resolve())

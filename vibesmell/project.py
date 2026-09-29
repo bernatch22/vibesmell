@@ -71,6 +71,25 @@ def project_for(given: str | None) -> Project:
     )
 
 
+def uses_vibesmell(package_dir: Path) -> bool:
+    """Whether the project says it uses vibesmell: a `[tool.vibesmell]` table in its pyproject.toml, empty or
+    not, or a `vibesmell` key in its package.json. The hook speaks only in a project that says so."""
+    pyproject = _up_to(package_dir, "pyproject.toml")
+    if pyproject:
+        try:
+            if "vibesmell" in tomllib.loads(pyproject.read_text(encoding="utf-8")).get("tool", {}):
+                return True
+        except (OSError, ValueError):
+            pass
+    manifest = _up_to(package_dir, "package.json")
+    if manifest:
+        try:
+            return "vibesmell" in json.loads(manifest.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pass
+    return False
+
+
 def _is_typescript(package_dir: Path) -> bool:
     """A folder with no __init__.py, TypeScript in it, and a tsconfig.json beside it or above."""
     if (package_dir / "__init__.py").exists() or not _up_to(package_dir, "tsconfig.json"):
